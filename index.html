@@ -6,10 +6,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#16a34a">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="BodyTrack">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
 <title>BodyTrack</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -838,11 +834,17 @@ function applyTX() {
 // AUTH
 // ═══════════════════════════════════════════
 async function loginGoogle() {
-  // Use origin + pathname so it works on localhost, GitHub Pages, Netlify — any host
-  const redirectTo = window.location.origin + window.location.pathname;
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const redirectUrl = isLocal ? window.location.origin : 'https://yoc-klein.github.io/BodyTrack/';
+  
   const {error} = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo }
+    options: { redirectTo: redirectUrl }
+  });
+  if(error) toast('Login error: ' + error.message);
+} = await sb.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo: window.location.href}
   });
   if(error) toast('Login error: '+error.message);
 }
@@ -876,7 +878,7 @@ async function saveSettings() {
         gd=$('s-gd').value, cal=parseInt($('s-cal').value)||2000;
   const data={user_id:user.id,height:h||null,age:age||null,gender:gender||null,
     goal_weight:gw||null,goal_date:gd||null,lang,daily_calorie_goal:cal,updated_at:new Date().toISOString()};
-  const {error}=await sb.from('user_settings').upsert(data,{onConflict:'user_id'});
+  const {error}=await sb.from('user_settings').upsert(data);
   if(error){toast('Error: '+error.message);return;}
   setts={...setts,...data}; toast(t().stsaved); updateAll();
 }
@@ -1367,15 +1369,6 @@ function showPage(id){
     showPage('pg-login');
   }
 })();
-</script>
-<script>
-// Register PWA service worker
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw.js')
-      .catch(e=>console.log('SW reg failed:',e));
-  });
-}
 </script>
 </body>
 </html>
