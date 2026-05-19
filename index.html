@@ -1188,16 +1188,36 @@ async function callGemini(parts, maxOut=800){
   const data=await res.json();
   console.log('[Gemini response]', data);
   if(data.error) throw new Error(data.error.message);
+  // Log full response for debugging
+  console.log('[Gemini full response]', JSON.stringify(data).slice(0,500));
+
+  // Check for blocked/filtered response
+  if(data.candidates?.[0]?.finishReason === 'SAFETY'){
+    throw new Error('Gemini blocked the request for safety reasons. Try a different image.');
+  }
+  if(data.candidates?.[0]?.finishReason === 'RECITATION'){
+    throw new Error('Gemini recitation filter triggered. Try again.');
+  }
+  if(data.promptFeedback?.blockReason){
+    throw new Error('Gemini blocked prompt: '+data.promptFeedback.blockReason);
+  }
+
   const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  if(!text) throw new Error('Gemini returned empty response. candidates: '+JSON.stringify(data.candidates));
+  if(!text){
+    const reason=data.candidates?.[0]?.finishReason||'unknown';
+    throw new Error('Gemini returned empty text. finishReason: '+reason+' | response: '+JSON.stringify(data).slice(0,300));
+  }
   return text;
 }
 
 function parseJSON(raw){
+  if(!raw || !raw.trim()) throw new Error('Gemini returned empty text response');
   let s=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
   const fi=s.search(/[\[{]/), li=Math.max(s.lastIndexOf(']'),s.lastIndexOf('}'));
-  if(fi>=0&&li>fi) s=s.slice(fi,li+1);
-  return JSON.parse(s);
+  if(fi<0||li<=fi) throw new Error('No JSON found in response: '+s.slice(0,200));
+  s=s.slice(fi,li+1);
+  try{ return JSON.parse(s); }
+  catch(e){ throw new Error('JSON parse failed: '+e.message+' | raw: '+s.slice(0,300)); }
 }
 
 // ═══════════════════════════════════════════
@@ -1210,7 +1230,7 @@ async function analyzeFood(){
   try{
     const raw=await callGemini([
       {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
-      {text:'You are a nutrition expert. Analyze this food image. Return ONLY valid JSON, no markdown: {"name":"dish name","serving":"estimated serving","calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"one short practical health tip"}'}
+      {text:'You are a nutrition expert. Analyze this food image. You MUST respond with ONLY a JSON object. No markdown, no backticks, no explanation before or after. Start your response with { and end with }. Use this exact format: {"name":"dish name","serving":"estimated serving size","calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"one short health tip"}'}
     ],500);
     const r=parseJSON(raw);
     window._lastFood=r;
@@ -1291,7 +1311,7 @@ async function generateMenu(){
   const goal=$('m-g').value, cals=parseInt($('m-c').value)||1800, pref=$('m-p').value;
   const lw=entries.length?entries[entries.length-1].weight:null;
   $('m-ld').style.display='flex'; $('m-disp').style.display='none'; $('m-chat').style.display='none'; $('m-save-row').style.display='none';
-  const prompt=`You are a professional dietitian. Create a complete 7-day meal plan.${lw?' User weight: '+lw+' kg.':''} Goal: ${goal}. Daily calories: ~${cals} kcal. Diet preference: ${pref}. Return ONLY valid JSON array, no markdown, no explanation: [{"day":"Monday","meals":[{"type":"Breakfast","name":"specific dish name","cal":320},{"type":"Lunch","name":"specific dish name","cal":500},{"type":"Dinner","name":"specific dish name","cal":550},{"type":"Snack","name":"specific dish name","cal":180}],"total":1550}] for all 7 days Monday through Sunday. Use realistic specific dish names. Vary the meals daily.`;
+  const prompt='You are a professional dietitian. Create a complete 7-day meal plan.'+(lw?' User weight: '+lw+' kg.':'')+' Goal: '+goal+'. Daily calories: ~'+cals+' kcal. Diet preference: '+pref+'. You MUST respond with ONLY a JSON array. No markdown, no backticks, no explanation. Start your response with [ and end with ]. Use this exact format: [{"day":"Monday","meals":[{"type":"Breakfast","name":"Oatmeal with berries","cal":320},{"type":"Lunch","name":"Grilled chicken salad","cal":500},{"type":"Dinner","name":"Salmon with vegetables","cal":550},{"type":"Snack","name":"Apple with almonds","cal":180}],"total":1550}] for all 7 days Monday through Sunday.';
   try{
     const raw=await callGemini([{text:prompt}],1500);
     currentMenu=parseJSON(raw);
