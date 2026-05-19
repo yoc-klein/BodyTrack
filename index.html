@@ -874,19 +874,50 @@ async function saveSettings() {
   const h=parseFloat($('s-h').value), age=parseInt($('s-age').value),
         gender=$('s-gen').value, gw=parseFloat($('s-gw').value),
         gd=$('s-gd').value, cal=parseInt($('s-cal').value)||2000;
-  const payload={user_id:user.id,height:h||null,age:age||null,gender:gender||null,
-    goal_weight:gw||null,goal_date:gd||null,lang,daily_calorie_goal:cal,
-    updated_at:new Date().toISOString()};
-  // Check if row exists first — RLS requires explicit INSERT vs UPDATE
-  const {data:existing}=await sb.from('user_settings').select('id').eq('user_id',user.id).maybeSingle();
-  let error;
-  if(existing){
-    ({error}=await sb.from('user_settings').update(payload).eq('user_id',user.id));
-  } else {
-    ({error}=await sb.from('user_settings').insert(payload));
+
+  const payload={
+    user_id: user.id,
+    height: h||null, age: age||null, gender: gender||null,
+    goal_weight: gw||null, goal_date: gd||null,
+    lang, daily_calorie_goal: cal,
+    updated_at: new Date().toISOString()
+  };
+
+  console.log('[saveSettings] user.id:', user.id);
+  console.log('[saveSettings] payload:', payload);
+
+  // Check if row already exists
+  const {data:existing, error:selErr} = await sb
+    .from('user_settings').select('id').eq('user_id', user.id).maybeSingle();
+
+  if(selErr){
+    console.error('[saveSettings] SELECT error:', selErr);
+    toast('Select error: ' + selErr.message + ' | ' + selErr.code);
+    return;
   }
-  if(error){toast('Error: '+error.message);return;}
-  setts={...setts,...payload}; toast(t().stsaved); updateAll();
+
+  console.log('[saveSettings] existing row:', existing);
+
+  let dbError;
+  if(existing){
+    const res = await sb.from('user_settings').update(payload).eq('user_id', user.id);
+    dbError = res.error;
+    console.log('[saveSettings] UPDATE result:', res);
+  } else {
+    const res = await sb.from('user_settings').insert(payload);
+    dbError = res.error;
+    console.log('[saveSettings] INSERT result:', res);
+  }
+
+  if(dbError){
+    console.error('[saveSettings] DB error:', dbError);
+    toast('Error ' + dbError.code + ': ' + dbError.message);
+    return;
+  }
+
+  setts={...setts,...payload};
+  toast(t().stsaved);
+  updateAll();
 }
 
 async function loadEntries() {
