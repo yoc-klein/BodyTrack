@@ -677,7 +677,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 const SB_URL  = 'https://pmkyzsoxjphnopspnvjf.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBta3l6c294anBobm9wc3BudmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODg2NDYsImV4cCI6MjA5NDY2NDY0Nn0.MMYA4_l4vImFeZbbgXnQhONQaFTrncADwmIyRRZBkz8';
 const GM_KEY  = 'AIzaSyD5qv3TIa7n2GSsnDF85NoT8D3PiSQP8Gk';
-const GM_URL  = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GM_KEY}`;
+const GM_URL  = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GM_KEY}`;
 
 const sb = supabase.createClient(SB_URL, SB_ANON);
 
@@ -1174,10 +1174,23 @@ function resetFood(){
 async function callGemini(parts, maxOut=800){
   const body={contents:[{parts}],generationConfig:{maxOutputTokens:maxOut,temperature:0.7}};
   const res=await fetch(GM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!res.ok) throw new Error('Gemini HTTP '+res.status);
+  if(!res.ok){
+    // Read full error body so we can show exact Gemini error
+    let errMsg='Gemini HTTP '+res.status;
+    try{
+      const errData=await res.json();
+      if(errData.error?.message) errMsg=errData.error.message;
+      else errMsg=JSON.stringify(errData);
+    }catch(e){}
+    console.error('[Gemini error]', res.status, errMsg);
+    throw new Error('Gemini '+res.status+': '+errMsg);
+  }
   const data=await res.json();
+  console.log('[Gemini response]', data);
   if(data.error) throw new Error(data.error.message);
-  return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  if(!text) throw new Error('Gemini returned empty response. candidates: '+JSON.stringify(data.candidates));
+  return text;
 }
 
 function parseJSON(raw){
