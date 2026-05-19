@@ -1366,9 +1366,11 @@ async function generateMenu(){
   const goal=$('m-g').value, cals=parseInt($('m-c').value)||1800, pref=$('m-p').value;
   const lw=entries.length?entries[entries.length-1].weight:null;
   $('m-ld').style.display='flex'; $('m-disp').style.display='none'; $('m-chat').style.display='none'; $('m-save-row').style.display='none';
-  const prompt='You are a professional dietitian. Create a complete 7-day meal plan.'+(lw?' User weight: '+lw+' kg.':'')+' Goal: '+goal+'. Daily calories: ~'+cals+' kcal. Diet preference: '+pref+'. You MUST respond with ONLY a JSON array. No markdown, no backticks, no explanation. Start your response with [ and end with ]. Use this exact format: [{"day":"Monday","meals":[{"type":"Breakfast","name":"Oatmeal with berries","cal":320},{"type":"Lunch","name":"Grilled chicken salad","cal":500},{"type":"Dinner","name":"Salmon with vegetables","cal":550},{"type":"Snack","name":"Apple with almonds","cal":180}],"total":1550}] for all 7 days Monday through Sunday.';
+  // Build a short prompt — long meal names cause JSON truncation on free tier
+  // We ask for SHORT names (max 2 words) to keep response small enough
+  const prompt='7-day meal plan. Goal:'+goal+'. ~'+cals+' kcal/day. Diet:'+pref+'.'+(lw?' Weight:'+lw+'kg.':'')+' JSON array only, no other text. IMPORTANT: meal names must be MAX 2 WORDS. Example format:[{"day":"Mon","meals":[{"type":"Breakfast","name":"Oat Porridge","cal":350},{"type":"Lunch","name":"Chicken Salad","cal":500},{"type":"Dinner","name":"Grilled Salmon","cal":550},{"type":"Snack","name":"Mixed Nuts","cal":150}],"total":1550}]. Use Mon/Tue/Wed/Thu/Fri/Sat/Sun. Vary meals each day. Output ONLY the JSON array.';
   try{
-    const raw=await callGemini([{text:prompt}],1500);
+    const raw=await callGemini([{text:prompt}],4096);
     currentMenu=parseJSON(raw);
     menuChat=[{role:'user',parts:[{text:prompt}]},{role:'model',parts:[{text:raw}]}];
     renderMenuDisplay(currentMenu);
@@ -1388,7 +1390,7 @@ async function sendChat(){
   const updatePrompt=`The user wants to modify the weekly menu. Current menu: ${JSON.stringify(currentMenu)}. User request: "${msg}". Return ONLY the complete updated JSON array in the same format, no markdown, no extra text.`;
   menuChat.push({role:'user',parts:[{text:updatePrompt}]});
   try{
-    const raw=await callGemini(menuChat.flatMap(m=>m.parts),1500);
+    const raw=await callGemini(menuChat.flatMap(m=>m.parts),4096);
     currentMenu=parseJSON(raw);
     menuChat.push({role:'model',parts:[{text:raw}]});
     renderMenuDisplay(currentMenu);
