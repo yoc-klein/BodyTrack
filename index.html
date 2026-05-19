@@ -676,8 +676,8 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 // ═══════════════════════════════════════════
 const SB_URL  = 'https://pmkyzsoxjphnopspnvjf.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBta3l6c294anBobm9wc3BudmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODg2NDYsImV4cCI6MjA5NDY2NDY0Nn0.MMYA4_l4vImFeZbbgXnQhONQaFTrncADwmIyRRZBkz8';
-const GM_KEY  = 'AIzaSyAwNsgL8t9QACItRpeeG1ObacORXyCH2wM';
-const GM_URL  = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+// ── Gemini is called via Cloudflare Worker proxy (key is secret in Worker env) ──
+const GM_PROXY = 'https://gemini-proxy.yoc-klein.workers.dev';
 
 const sb = supabase.createClient(SB_URL, SB_ANON);
 
@@ -1195,9 +1195,12 @@ function resetFood(){
 // ═══════════════════════════════════════════
 // GEMINI AI
 // ═══════════════════════════════════════════
-async function callGemini(parts, maxOut=2048, attempt=1){
-  const body={contents:[{parts}],generationConfig:{maxOutputTokens:maxOut,temperature:0.7}};
-  const res=await fetch(GM_URL,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':GM_KEY},body:JSON.stringify(body)});
+async function callGemini(parts, maxOut=2048, attempt=1, schema=null){
+  const genConfig={maxOutputTokens:maxOut,temperature:0.7};
+  // If schema provided, force JSON output mode — Gemini MUST return valid JSON
+  if(schema){ genConfig.responseMimeType='application/json'; genConfig.responseSchema=schema; }
+  const body={contents:[{parts}],generationConfig:genConfig};
+  const res=await fetch(GM_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!res.ok){
     let errMsg='Gemini HTTP '+res.status;
     let errCode=res.status;
@@ -1283,10 +1286,24 @@ async function analyzeFood(){
   $('f-ld').style.display='flex'; $('f-cf').style.display='none';
   const tx=t();
   try{
+    const foodSchema={
+      type:'object',
+      properties:{
+        name:{type:'string',maxLength:40},
+        serving_g:{type:'integer'},
+        calories:{type:'integer'},
+        protein_g:{type:'number'},
+        carbs_g:{type:'number'},
+        fat_g:{type:'number'},
+        fiber_g:{type:'number'},
+        tip:{type:'string',maxLength:60}
+      },
+      required:['name','serving_g','calories','protein_g','carbs_g','fat_g','fiber_g','tip']
+    };
     const raw=await callGemini([
       {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
-      {text:'Analyze this food image. Reply with ONLY this JSON, no other text: {"name":"FOOD_NAME","serving_g":150,"calories":350,"protein_g":25,"carbs_g":0,"fat_g":12,"fiber_g":0,"tip":"TIP"}. Replace FOOD_NAME with the dish name (max 3 words). Replace 150 with estimated grams. Replace numbers with estimated nutrition. Replace TIP with one short tip (max 5 words). Nothing before or after the JSON.'}
-    ],2048);
+      {text:'You are a nutrition expert. Analyze this food image and estimate the nutritional content.'}
+    ],1024,1,foodSchema);
     const r=parseJSON(raw);
     window._lastFood=r;
     $('f-cfbox').innerHTML=`
@@ -1370,7 +1387,31 @@ async function generateMenu(){
   // We ask for SHORT names (max 2 words) to keep response small enough
   const prompt='7-day meal plan. Goal:'+goal+'. ~'+cals+' kcal/day. Diet:'+pref+'.'+(lw?' Weight:'+lw+'kg.':'')+' JSON array only, no other text. IMPORTANT: meal names must be MAX 2 WORDS. Example format:[{"day":"Mon","meals":[{"type":"Breakfast","name":"Oat Porridge","cal":350},{"type":"Lunch","name":"Chicken Salad","cal":500},{"type":"Dinner","name":"Grilled Salmon","cal":550},{"type":"Snack","name":"Mixed Nuts","cal":150}],"total":1550}]. Use Mon/Tue/Wed/Thu/Fri/Sat/Sun. Vary meals each day. Output ONLY the JSON array.';
   try{
-    const raw=await callGemini([{text:prompt}],4096);
+    // Schema forces Gemini to return exactly this structure with short strings
+    const menuSchema={
+      type:'array',
+      items:{
+        type:'object',
+        properties:{
+          day:{type:'string',maxLength:10},
+          total:{type:'integer'},
+          meals:{
+            type:'array',
+            items:{
+              type:'object',
+              properties:{
+                type:{type:'string',maxLength:10},
+                name:{type:'string',maxLength:30},
+                cal:{type:'integer'}
+              },
+              required:['type','name','cal']
+            }
+          }
+        },
+        required:['day','meals','total']
+      }
+    };
+    const raw=await callGemini([{text:prompt}],4096,1,menuSchema);
     currentMenu=parseJSON(raw);
     menuChat=[{role:'user',parts:[{text:prompt}]},{role:'model',parts:[{text:raw}]}];
     renderMenuDisplay(currentMenu);
@@ -1390,7 +1431,7 @@ async function sendChat(){
   const updatePrompt=`The user wants to modify the weekly menu. Current menu: ${JSON.stringify(currentMenu)}. User request: "${msg}". Return ONLY the complete updated JSON array in the same format, no markdown, no extra text.`;
   menuChat.push({role:'user',parts:[{text:updatePrompt}]});
   try{
-    const raw=await callGemini(menuChat.flatMap(m=>m.parts),4096);
+    const raw=await callGemini(menuChat.flatMap(m=>m.parts),4096,1,menuSchema);
     currentMenu=parseJSON(raw);
     menuChat.push({role:'model',parts:[{text:raw}]});
     renderMenuDisplay(currentMenu);
