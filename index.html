@@ -6,6 +6,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#16a34a">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BodyTrack">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>BodyTrack</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -834,17 +838,11 @@ function applyTX() {
 // AUTH
 // ═══════════════════════════════════════════
 async function loginGoogle() {
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const redirectUrl = isLocal ? window.location.origin : 'https://yoc-klein.github.io/BodyTrack/';
-  
+  // Use origin + pathname so it works on localhost, GitHub Pages, Netlify — any host
+  const redirectTo = window.location.origin + window.location.pathname;
   const {error} = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: redirectUrl }
-  });
-  if(error) toast('Login error: ' + error.message);
-} = await sb.auth.signInWithOAuth({
-    provider:'google',
-    options:{redirectTo: window.location.href}
+    options: { redirectTo }
   });
   if(error) toast('Login error: '+error.message);
 }
@@ -859,7 +857,7 @@ async function doLogout() {
 // DATABASE
 // ═══════════════════════════════════════════
 async function loadSettings() {
-  const {data} = await sb.from('user_settings').select('*').eq('user_id',user.id).single();
+  const {data} = await sb.from('user_settings').select('*').eq('user_id',user.id).maybeSingle();
   if(data) {
     setts=data;
     if(setts.lang){ lang=setts.lang; setLang(lang); }
@@ -876,11 +874,19 @@ async function saveSettings() {
   const h=parseFloat($('s-h').value), age=parseInt($('s-age').value),
         gender=$('s-gen').value, gw=parseFloat($('s-gw').value),
         gd=$('s-gd').value, cal=parseInt($('s-cal').value)||2000;
-  const data={user_id:user.id,height:h||null,age:age||null,gender:gender||null,
-    goal_weight:gw||null,goal_date:gd||null,lang,daily_calorie_goal:cal,updated_at:new Date().toISOString()};
-  const {error}=await sb.from('user_settings').upsert(data);
+  const payload={user_id:user.id,height:h||null,age:age||null,gender:gender||null,
+    goal_weight:gw||null,goal_date:gd||null,lang,daily_calorie_goal:cal,
+    updated_at:new Date().toISOString()};
+  // Check if row exists first — RLS requires explicit INSERT vs UPDATE
+  const {data:existing}=await sb.from('user_settings').select('id').eq('user_id',user.id).maybeSingle();
+  let error;
+  if(existing){
+    ({error}=await sb.from('user_settings').update(payload).eq('user_id',user.id));
+  } else {
+    ({error}=await sb.from('user_settings').insert(payload));
+  }
   if(error){toast('Error: '+error.message);return;}
-  setts={...setts,...data}; toast(t().stsaved); updateAll();
+  setts={...setts,...payload}; toast(t().stsaved); updateAll();
 }
 
 async function loadEntries() {
@@ -928,7 +934,15 @@ async function logEntry() {
   const bmi=calcBMI(w,h);
   const btn=$('a-save-btn'); btn.disabled=true; $s('a-btn',t().saving);
   try{
-    await sb.from('weight_entries').upsert({user_id:user.id,date:d,weight:w,bmi,note:n},{onConflict:'user_id,date'});
+    // Check for existing entry on same date → update it, else insert
+    const {data:existing}=await sb.from('weight_entries').select('id').eq('user_id',user.id).eq('date',d).maybeSingle();
+    let dbErr;
+    if(existing){
+      ({error:dbErr}=await sb.from('weight_entries').update({weight:w,bmi,note:n}).eq('id',existing.id).eq('user_id',user.id));
+    } else {
+      ({error:dbErr}=await sb.from('weight_entries').insert({user_id:user.id,date:d,weight:w,bmi,note:n}));
+    }
+    if(dbErr) throw dbErr;
     await loadEntries();
     $('a-w').value=''; $('a-n').value=''; $('bpv').style.display='none';
     toast(t().aok); updateAll(); switchTab('dash');
@@ -1369,6 +1383,15 @@ function showPage(id){
     showPage('pg-login');
   }
 })();
+</script>
+<script>
+// Register PWA service worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js')
+      .catch(e=>console.log('SW reg failed:',e));
+  });
+}
 </script>
 </body>
 </html>
