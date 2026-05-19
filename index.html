@@ -1195,7 +1195,7 @@ function resetFood(){
 // ═══════════════════════════════════════════
 // GEMINI AI
 // ═══════════════════════════════════════════
-async function callGemini(parts, maxOut=1024){
+async function callGemini(parts, maxOut=2048){
   const body={contents:[{parts}],generationConfig:{maxOutputTokens:maxOut,temperature:0.7}};
   const res=await fetch(GM_URL,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':GM_KEY},body:JSON.stringify(body)});
   if(!res.ok){
@@ -1254,8 +1254,8 @@ async function analyzeFood(){
   try{
     const raw=await callGemini([
       {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
-      {text:'You are a nutrition expert. Analyze this food image. You MUST respond with ONLY a JSON object. No markdown, no backticks, no explanation before or after. Start your response with { and end with }. Use this exact format: {"name":"dish name","serving":"estimated serving size","calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"one short health tip"}'}
-    ],1024);
+      {text:'Nutrition expert. Analyze this food image. Respond with ONLY a JSON object, nothing else. Keep all string values SHORT (under 30 chars). Format: {"name":"Beef Steak","serving":"150g","calories":350,"protein_g":25,"carbs_g":0,"fat_g":12,"fiber_g":0,"tip":"High protein meal"}'}
+    ],2048);
     const r=parseJSON(raw);
     window._lastFood=r;
     $('f-cfbox').innerHTML=`
