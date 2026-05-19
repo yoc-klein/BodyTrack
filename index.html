@@ -1242,12 +1242,37 @@ async function callGemini(parts, maxOut=2048, attempt=1){
 
 function parseJSON(raw){
   if(!raw || !raw.trim()) throw new Error('Gemini returned empty text response');
+  // Strip markdown fences
   let s=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
-  const fi=s.search(/[\[{]/), li=Math.max(s.lastIndexOf(']'),s.lastIndexOf('}'));
-  if(fi<0||li<=fi) throw new Error('No JSON found in response: '+s.slice(0,200));
-  s=s.slice(fi,li+1);
-  try{ return JSON.parse(s); }
-  catch(e){ throw new Error('JSON parse failed: '+e.message+' | raw: '+s.slice(0,300)); }
+  // Try to find complete JSON object or array
+  // Look for first { or [ and matching last } or ]
+  const isArr = s.indexOf('[') >= 0 && (s.indexOf('[') < s.indexOf('{') || s.indexOf('{') < 0);
+  if(isArr){
+    const fi=s.indexOf('['), li=s.lastIndexOf(']');
+    if(fi>=0 && li>fi){
+      try{ return JSON.parse(s.slice(fi,li+1)); }catch(e){}
+    }
+  } else {
+    const fi=s.indexOf('{'), li=s.lastIndexOf('}');
+    if(fi>=0 && li>fi){
+      try{ return JSON.parse(s.slice(fi,li+1)); }catch(e){}
+    }
+  }
+  // Last resort: try to fix truncated JSON by closing open brackets
+  try{
+    let attempt=s;
+    // Count unclosed braces and brackets
+    let opens=0, openb=0;
+    for(const c of attempt){ if(c==='{')opens++; if(c==='}')opens--; if(c==='[')openb++; if(c===']')openb--; }
+    // Close any unclosed strings first (find last " that doesn't have a closing ")
+    if(attempt.match(/"[^"]*$/)) attempt=attempt.replace(/"[^"]*$/, '"');
+    // Close unclosed objects/arrays
+    while(openb>0){ attempt+=']}'; openb--; }
+    while(opens>0){ attempt+='}'; opens--; }
+    return JSON.parse(attempt);
+  }catch(e){
+    throw new Error('No JSON found in response: '+s.slice(0,300));
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1260,14 +1285,14 @@ async function analyzeFood(){
   try{
     const raw=await callGemini([
       {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
-      {text:'Nutrition expert. Analyze this food image. Respond with ONLY a JSON object, nothing else. Keep all string values SHORT (under 30 chars). Format: {"name":"Beef Steak","serving":"150g","calories":350,"protein_g":25,"carbs_g":0,"fat_g":12,"fiber_g":0,"tip":"High protein meal"}'}
+      {text:'Analyze this food image. Reply with ONLY this JSON, no other text: {"name":"FOOD_NAME","serving_g":150,"calories":350,"protein_g":25,"carbs_g":0,"fat_g":12,"fiber_g":0,"tip":"TIP"}. Replace FOOD_NAME with the dish name (max 3 words). Replace 150 with estimated grams. Replace numbers with estimated nutrition. Replace TIP with one short tip (max 5 words). Nothing before or after the JSON.'}
     ],2048);
     const r=parseJSON(raw);
     window._lastFood=r;
     $('f-cfbox').innerHTML=`
       <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">✨ AI Analysis</div>
       <div style="font-size:17px;font-weight:800">${r.name}</div>
-      <div style="font-size:12px;color:var(--green);margin-top:2px">${r.serving}</div>
+      <div style="font-size:12px;color:var(--green);margin-top:2px">${r.serving_g ? r.serving_g+'g' : (r.serving||'')}</div>
       <div style="display:flex;align-items:baseline;gap:5px;margin:8px 0">
         <span style="font-size:30px;font-weight:900;color:var(--green)">${r.calories}</span>
         <span style="font-size:13px;color:var(--text2)">${tx.kcal}</span>
