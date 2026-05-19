@@ -1195,18 +1195,24 @@ function resetFood(){
 // ═══════════════════════════════════════════
 // GEMINI AI
 // ═══════════════════════════════════════════
-async function callGemini(parts, maxOut=2048){
+async function callGemini(parts, maxOut=2048, attempt=1){
   const body={contents:[{parts}],generationConfig:{maxOutputTokens:maxOut,temperature:0.7}};
   const res=await fetch(GM_URL,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':GM_KEY},body:JSON.stringify(body)});
   if(!res.ok){
-    // Read full error body so we can show exact Gemini error
     let errMsg='Gemini HTTP '+res.status;
+    let errCode=res.status;
     try{
       const errData=await res.json();
       if(errData.error?.message) errMsg=errData.error.message;
       else errMsg=JSON.stringify(errData);
     }catch(e){}
     console.error('[Gemini error]', res.status, errMsg);
+    // Auto-retry once on 503 (overloaded) or 429 (rate limit) after 3 seconds
+    if((errCode===503||errCode===429) && attempt===1){
+      console.log('[Gemini] Retrying in 3s...');
+      await new Promise(r=>setTimeout(r,3000));
+      return callGemini(parts, maxOut, 2);
+    }
     throw new Error('Gemini '+res.status+': '+errMsg);
   }
   const data=await res.json();
