@@ -677,7 +677,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 const SB_URL  = 'https://pmkyzsoxjphnopspnvjf.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBta3l6c294anBobm9wc3BudmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODg2NDYsImV4cCI6MjA5NDY2NDY0Nn0.MMYA4_l4vImFeZbbgXnQhONQaFTrncADwmIyRRZBkz8';
 const GM_KEY  = 'AIzaSyD5qv3TIa7n2GSsnDF85NoT8D3PiSQP8Gk';
-const GM_URL  = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GM_KEY}`;
+const GM_URL  = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 const sb = supabase.createClient(SB_URL, SB_ANON);
 
@@ -1173,7 +1173,7 @@ function resetFood(){
 // ═══════════════════════════════════════════
 async function callGemini(parts, maxOut=800){
   const body={contents:[{parts}],generationConfig:{maxOutputTokens:maxOut,temperature:0.7}};
-  const res=await fetch(GM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const res=await fetch(GM_URL,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':GM_KEY},body:JSON.stringify(body)});
   if(!res.ok){
     // Read full error body so we can show exact Gemini error
     let errMsg='Gemini HTTP '+res.status;
