@@ -849,8 +849,7 @@ async function loginGoogle() {
 
 async function doLogout() {
   await sb.auth.signOut();
-  user=null; entries=[]; setts={};
-  showPage('pg-login');
+  // onAuthStateChange SIGNED_OUT will handle clearing state + showing login page
 }
 
 // ═══════════════════════════════════════════
@@ -1384,35 +1383,61 @@ function showPage(id){
 // ═══════════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════════
+
+// Central function — called whenever we have a confirmed session
+async function initApp(session) {
+  user = session.user;
+  showPage('pg-app');
+  const meta = user.user_metadata || {};
+  $s('tp-user', meta.full_name || meta.name || user.email || '');
+  $s('st-nm',   meta.full_name || meta.name || '');
+  $s('st-em',   user.email || '');
+  const av = $('st-av');
+  if(meta.avatar_url) av.innerHTML = `<img src="${meta.avatar_url}" class="uav" alt="">`;
+  else av.innerHTML = `<div class="uavp">${(meta.full_name||'U')[0].toUpperCase()}</div>`;
+  await loadSettings();
+  await loadEntries();
+  $('a-d').value = today();
+  setRange(30); updateAll(); switchTab('dash'); showFoodTab('a');
+}
+
 (async()=>{
-  const t0=Date.now();
-  sb.auth.onAuthStateChange(async(event,session)=>{
-    const wait=Math.max(0,1500-(Date.now()-t0));
-    await new Promise(r=>setTimeout(r,wait));
-    if(session?.user){
-      user=session.user;
-      showPage('pg-app');
-      const meta=user.user_metadata||{};
-      $s('tp-user',meta.full_name||meta.name||user.email||'');
-      $s('st-nm',meta.full_name||meta.name||'');
-      $s('st-em',user.email||'');
-      const av=$('st-av');
-      if(meta.avatar_url) av.innerHTML=`<img src="${meta.avatar_url}" class="uav" alt="">`;
-      else av.innerHTML=`<div class="uavp">${(meta.full_name||'U')[0].toUpperCase()}</div>`;
-      await loadSettings();
-      await loadEntries();
-      $('a-d').value=today();
-      setRange(30); updateAll(); switchTab('dash'); showFoodTab('a');
-    }else{
-      showPage('pg-login');
-    }
-  });
-  const {data:{session}}=await sb.auth.getSession();
-  if(!session){
-    const wait=Math.max(0,1500-(Date.now()-t0));
-    await new Promise(r=>setTimeout(r,wait));
+  const t0 = Date.now();
+  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, 1500-(Date.now()-t0))));
+
+  // 1. Check for an existing session immediately (handles page refresh / returning users)
+  const { data:{ session } } = await sb.auth.getSession();
+
+  if(session?.user){
+    // Returning user — already logged in
+    await splashWait();
+    await initApp(session);
+  } else {
+    // No session yet — wait for OAuth redirect callback or show login
+    await splashWait();
     showPage('pg-login');
   }
+
+  // 2. Listen for future auth changes:
+  //    - SIGNED_IN  : fires after OAuth redirect completes
+  //    - SIGNED_OUT : fires when user logs out
+  //    - TOKEN_REFRESHED: fires when token auto-refreshes (keep data fresh)
+  sb.auth.onAuthStateChange(async(event, session) => {
+    console.log('[auth]', event, session?.user?.email);
+    if(event === 'SIGNED_IN' && session?.user) {
+      // Only init if not already showing the app (avoid double-init on refresh)
+      if($('pg-app').classList.contains('on')) return;
+      await initApp(session);
+    }
+    if(event === 'SIGNED_OUT') {
+      user = null; entries = []; setts = {};
+      showPage('pg-login');
+    }
+    if(event === 'TOKEN_REFRESHED' && session?.user && user) {
+      // Token silently refreshed — update user object but don't re-init
+      user = session.user;
+    }
+  });
 })();
 </script>
 <script>
