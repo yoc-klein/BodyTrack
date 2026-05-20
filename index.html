@@ -1336,9 +1336,10 @@ async function analyzeText(){
   };
 
   try{
-    const prompt = lang==='he'
-      ? 'אתה מומחה תזונה. המשתמש אכל: "'+txt+'". חשב ערכים תזונתיים מדויקים.'
-      : 'You are a nutrition expert. The user ate: "'+txt+'". Calculate accurate nutritional values.';
+    // Force JSON-only response — no conversation, no Hebrew text intro
+    const prompt = 'Nutrition expert. Calculate nutritional values for: "'+txt+'". '
+      + 'Respond with ONLY a JSON object, absolutely no other text. '
+      + 'Format: {"name":"dish name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip"}';
 
     const raw=await callGemini([{text:prompt}],1024,1,foodSchema);
     const r=parseJSON(raw);
