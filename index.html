@@ -677,7 +677,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 const SB_URL  = 'https://pmkyzsoxjphnopspnvjf.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBta3l6c294anBobm9wc3BudmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODg2NDYsImV4cCI6MjA5NDY2NDY0Nn0.MMYA4_l4vImFeZbbgXnQhONQaFTrncADwmIyRRZBkz8';
 // ── Gemini is called via Cloudflare Worker proxy (key is secret in Worker env) ──
-const GM_PROXY = 'https://gemini-proxy.yoc-klein.workers.dev';
+const GM_PROXY = 'https://gemini-proxy.YOUR-CLOUDFLARE-NAME.workers.dev';
 
 const sb = supabase.createClient(SB_URL, SB_ANON);
 
@@ -1379,38 +1379,43 @@ async function rmFoodLog(id){
 // ═══════════════════════════════════════════
 // MENU GENERATOR + CHAT
 // ═══════════════════════════════════════════
+// Schema defined at module level so both generateMenu and sendChat can access it
+const menuSchema={
+  type:'array',
+  items:{
+    type:'object',
+    properties:{
+      day:{type:'string',maxLength:12},
+      total:{type:'integer'},
+      meals:{
+        type:'array',
+        items:{
+          type:'object',
+          properties:{
+            type:{type:'string',maxLength:15},
+            name:{type:'string',maxLength:30},
+            cal:{type:'integer'}
+          },
+          required:['type','name','cal']
+        }
+      }
+    },
+    required:['day','meals','total']
+  }
+};
+
 async function generateMenu(){
   const goal=$('m-g').value, cals=parseInt($('m-c').value)||1800, pref=$('m-p').value;
   const lw=entries.length?entries[entries.length-1].weight:null;
+  const isHe=lang==='he';
   $('m-ld').style.display='flex'; $('m-disp').style.display='none'; $('m-chat').style.display='none'; $('m-save-row').style.display='none';
-  // Build a short prompt — long meal names cause JSON truncation on free tier
-  // We ask for SHORT names (max 2 words) to keep response small enough
-  const prompt='7-day meal plan. Goal:'+goal+'. ~'+cals+' kcal/day. Diet:'+pref+'.'+(lw?' Weight:'+lw+'kg.':'')+' JSON array only, no other text. IMPORTANT: meal names must be MAX 2 WORDS. Example format:[{"day":"Mon","meals":[{"type":"Breakfast","name":"Oat Porridge","cal":350},{"type":"Lunch","name":"Chicken Salad","cal":500},{"type":"Dinner","name":"Grilled Salmon","cal":550},{"type":"Snack","name":"Mixed Nuts","cal":150}],"total":1550}]. Use Mon/Tue/Wed/Thu/Fri/Sat/Sun. Vary meals each day. Output ONLY the JSON array.';
+
+  // Hebrew prompt uses Israeli days and Hebrew meal names
+  const prompt = isHe
+    ? 'תפריט שבועי ישראלי ל-7 ימים. מטרה:'+goal+'. ~'+cals+' קלוריות/יום. תזונה:'+pref+'.'+(lw?' משקל:'+lw+'ק"ג.':'')+' החזר JSON בלבד. שמות ארוחות בעברית קצרים (מקסימום 3 מילים). ימים בעברית: ראשון/שני/שלישי/רביעי/חמישי/שישי/שבת. סוגי ארוחות: בוקר/צהריים/ערב/חטיף. דוגמה:[{"day":"ראשון","meals":[{"type":"בוקר","name":"דייסת שיבולת שועל","cal":350},{"type":"צהריים","name":"סלט עוף","cal":500},{"type":"ערב","name":"סלמון בתנור","cal":550},{"type":"חטיף","name":"יוגורט עם פירות","cal":150}],"total":1550}]. שנה ארוחות בכל יום.'
+    : '7-day meal plan. Goal:'+goal+'. ~'+cals+' kcal/day. Diet:'+pref+'.'+(lw?' Weight:'+lw+'kg.':'')+' JSON array only. Meal names MAX 3 WORDS. Days: Mon/Tue/Wed/Thu/Fri/Sat/Sun. Types: Breakfast/Lunch/Dinner/Snack. Example:[{"day":"Mon","meals":[{"type":"Breakfast","name":"Oat Porridge","cal":350},{"type":"Lunch","name":"Chicken Salad","cal":500},{"type":"Dinner","name":"Grilled Salmon","cal":550},{"type":"Snack","name":"Mixed Nuts","cal":150}],"total":1550}]. Vary meals daily.';
+
   try{
-    // Schema forces Gemini to return exactly this structure with short strings
-    const menuSchema={
-      type:'array',
-      items:{
-        type:'object',
-        properties:{
-          day:{type:'string',maxLength:10},
-          total:{type:'integer'},
-          meals:{
-            type:'array',
-            items:{
-              type:'object',
-              properties:{
-                type:{type:'string',maxLength:10},
-                name:{type:'string',maxLength:30},
-                cal:{type:'integer'}
-              },
-              required:['type','name','cal']
-            }
-          }
-        },
-        required:['day','meals','total']
-      }
-    };
     const raw=await callGemini([{text:prompt}],4096,1,menuSchema);
     currentMenu=parseJSON(raw);
     menuChat=[{role:'user',parts:[{text:prompt}]},{role:'model',parts:[{text:raw}]}];
@@ -1427,15 +1432,19 @@ async function generateMenu(){
 
 async function sendChat(){
   const inp=$('chat-inp'), msg=inp.value.trim(); if(!msg)return;
+  const isHe=lang==='he';
   inp.value=''; addMsg(msg,'user'); $('m-chat-ld').style.display='flex';
-  const updatePrompt=`The user wants to modify the weekly menu. Current menu: ${JSON.stringify(currentMenu)}. User request: "${msg}". Return ONLY the complete updated JSON array in the same format, no markdown, no extra text.`;
+  // Tell Gemini to keep same language as current menu
+  const updatePrompt=isHe
+    ? 'עדכן את התפריט השבועי לפי בקשת המשתמש. תפריט נוכחי: '+JSON.stringify(currentMenu)+'. בקשה: "'+msg+'". החזר JSON מלא מעודכן בלבד, אותו פורמט, שמות ארוחות בעברית.'
+    : 'Update the weekly menu based on user request. Current menu: '+JSON.stringify(currentMenu)+'. Request: "'+msg+'". Return ONLY the complete updated JSON array, same format.';
   menuChat.push({role:'user',parts:[{text:updatePrompt}]});
   try{
     const raw=await callGemini(menuChat.flatMap(m=>m.parts),4096,1,menuSchema);
     currentMenu=parseJSON(raw);
     menuChat.push({role:'model',parts:[{text:raw}]});
     renderMenuDisplay(currentMenu);
-    addMsg(lang==='he'?'✅ התפריט עודכן!':'✅ Menu updated!','ai');
+    addMsg(isHe?'✅ התפריט עודכן!':'✅ Menu updated!','ai');
   }catch(err){ addMsg('❌ '+err.message,'ai'); }
   $('m-chat-ld').style.display='none';
 }
