@@ -452,21 +452,57 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
       <div id="fp-a">
         <div class="card">
           <div class="ct" id="f-ttl">🍽️ Food Analyzer</div>
-          <div class="cs" id="f-sub">Upload a photo — AI identifies calories & macros</div>
-          <div id="dz" class="dz">
-            <input type="file" id="f-inp" accept="image/*" onchange="handleFoodImg(event)">
-            <div style="font-size:38px;margin-bottom:9px">📷</div>
-            <div style="font-size:14px;font-weight:600" id="f-tap">Tap to upload food photo</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:3px">JPEG · PNG · WEBP</div>
+          <div class="cs" id="f-sub">3 ways to analyze your food</div>
+
+          <!-- MODE SELECTOR -->
+          <div style="display:flex;gap:6px;margin-bottom:14px">
+            <button class="btn btn-g btn-sm" id="fm-btn-upload" onclick="setFoodMode('upload')" style="flex:1"><span class="ico">📁</span><span id="fm-upload-l">Upload</span></button>
+            <button class="btn btn-s btn-sm" id="fm-btn-camera" onclick="setFoodMode('camera')" style="flex:1"><span class="ico">📸</span><span id="fm-camera-l">Camera</span></button>
+            <button class="btn btn-s btn-sm" id="fm-btn-text" onclick="setFoodMode('text')" style="flex:1"><span class="ico">✏️</span><span id="fm-text-l">Text</span></button>
           </div>
+
+          <!-- MODE: UPLOAD -->
+          <div id="fm-upload">
+            <div id="dz" class="dz">
+              <input type="file" id="f-inp" accept="image/*" onchange="handleFoodImg(event)">
+              <div style="font-size:38px;margin-bottom:9px">📁</div>
+              <div style="font-size:14px;font-weight:600" id="f-tap">Tap to upload food photo</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">JPEG · PNG · WEBP</div>
+            </div>
+          </div>
+
+          <!-- MODE: CAMERA -->
+          <div id="fm-camera" style="display:none">
+            <div id="cam-wrap" style="position:relative;border-radius:var(--r2);overflow:hidden;background:#000;margin-bottom:10px">
+              <video id="cam-video" style="width:100%;max-height:260px;display:block;object-fit:cover" autoplay playsinline muted></video>
+              <div id="cam-countdown" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:64px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
+            </div>
+            <div class="gap8">
+              <button class="btn btn-g" id="cam-snap-btn" onclick="snapPhoto()"><span class="ico">📸</span><span id="cam-snap-l">Take Photo</span></button>
+              <button class="btn btn-s btn-sm" onclick="stopCamera()"><span class="ico">✕</span></button>
+            </div>
+            <canvas id="cam-canvas" style="display:none"></canvas>
+          </div>
+
+          <!-- MODE: TEXT -->
+          <div id="fm-text" style="display:none">
+            <div class="fld">
+              <label class="flbl" id="f-txt-l">Describe what you ate</label>
+              <textarea class="fi" id="f-text-inp" rows="3" placeholder="e.g. I ate 2 scrambled eggs with toast and a cup of coffee with milk"></textarea>
+            </div>
+            <button class="btn btn-g" onclick="analyzeText()"><span class="ico">🔍</span><span id="f-txt-btn-l">Analyze with AI</span></button>
+          </div>
+
+          <!-- SHARED: image preview (upload + camera) -->
           <div id="f-pw" style="display:none;margin-top:12px">
             <img id="f-pi" style="width:100%;border-radius:var(--r2);max-height:200px;object-fit:cover;display:block;margin-bottom:12px" src="" alt="">
             <button class="btn btn-g" onclick="analyzeFood()"><span class="ico">🔍</span><span id="f-an-l">Analyze with AI</span></button>
             <button class="btn btn-s mt" onclick="resetFood()"><span class="ico">🔄</span><span id="f-rs-l">Choose different photo</span></button>
           </div>
+
           <div id="f-ld" class="ld" style="display:none"><div class="spi"></div><span id="f-ld-l">Analyzing with AI...</span></div>
 
-          <!-- CONFIRM STEP -->
+          <!-- CONFIRM STEP (shared by all 3 modes) -->
           <div id="f-cf" style="display:none;margin-top:12px">
             <div class="cfbox" id="f-cfbox"></div>
             <div class="fld mt">
@@ -701,7 +737,11 @@ en:{
   aok:'Entry logged! 💪',ahint:'💡 Set your height in Settings so BMI is calculated automatically.',
   httl:'History',hexp:'Export',hbmil:'BMI Over Time',hcall:'Calories Per Day',hdel:'Entry deleted',
   ftla:'Analyzer',ftll:'Food Log',ftlm:'Menu',
-  fttl:'🍽️ Food Analyzer',fsub:'Upload a photo — AI identifies calories & macros',
+  fttl:'🍽️ Food Analyzer',fsub:'3 ways to analyze your food',
+  fmUpload:'Upload',fmCamera:'Camera',fmText:'Text',
+  fmSnapL:'Take Photo',
+  fTxtL:'Describe what you ate',fTxtBtn:'Analyze with AI',
+  fTxtPh:'e.g. 2 scrambled eggs with toast and coffee',
   ftap:'Tap to upload food photo',fanl:'Analyze with AI',frsl:'Choose different photo',
   fldl:'Analyzing with AI...',ffail:'Analysis failed. Please try again.',
   fdshL:'Dish name (edit if needed)',fmtL:'Meal type',fdtL:'Date',
@@ -741,7 +781,11 @@ he:{
   aok:'הרשומה נשמרה! 💪',ahint:'💡 הגדר גובה בהגדרות כדי לחשב BMI אוטומטית.',
   httl:'היסטוריה',hexp:'ייצוא',hbmil:'BMI לאורך זמן',hcall:'קלוריות ליום',hdel:'הרשומה נמחקה',
   ftla:'ניתוח',ftll:'יומן אוכל',ftlm:'תפריט',
-  fttl:'🍽️ ניתוח אוכל',fsub:'העלה תמונה — AI מזהה קלוריות ומאקרו',
+  fttl:'🍽️ ניתוח אוכל',fsub:'3 דרכים לנתח את האוכל שלך',
+  fmUpload:'העלה',fmCamera:'מצלמה',fmText:'טקסט',
+  fmSnapL:'צלם תמונה',
+  fTxtL:'תאר מה אכלת',fTxtBtn:'נתח עם AI',
+  fTxtPh:'לדוגמה: 2 ביצים מקושקשות עם לחם וקפה',
   ftap:'לחץ להעלאת תמונת אוכל',fanl:'נתח עם AI',frsl:'בחר תמונה אחרת',
   fldl:'מנתח עם AI...',ffail:'הניתוח נכשל. נסה שוב.',
   fdshL:'שם המנה (ערוך אם נדרש)',fmtL:'סוג ארוחה',fdtL:'תאריך',
@@ -814,6 +858,9 @@ function applyTX() {
   $s('h-ttl',tx.httl); $s('h-exp',tx.hexp); $s('h-bmi-l',tx.hbmil); $s('h-cal-l',tx.hcall);
   $s('ft-la',tx.ftla); $s('ft-ll',tx.ftll); $s('ft-lm',tx.ftlm);
   $s('f-ttl',tx.fttl); $s('f-sub',tx.fsub); $s('f-tap',tx.ftap);
+  $s('fm-upload-l',tx.fmUpload); $s('fm-camera-l',tx.fmCamera); $s('fm-text-l',tx.fmText);
+  $s('cam-snap-l',tx.fmSnapL); $s('f-txt-l',tx.fTxtL); $s('f-txt-btn-l',tx.fTxtBtn);
+  const fti=$('f-text-inp'); if(fti)fti.placeholder=tx.fTxtPh;
   $s('f-an-l',tx.fanl); $s('f-rs-l',tx.frsl); $s('f-ld-l',tx.fldl);
   $s('f-dsh-l',tx.fdshL); $s('f-mt-l',tx.fmtL); $s('f-dt-l',tx.fdtL); $s('f-cf-l',tx.fcfl);
   $s('fmt-b',tx.fmtB); $s('fmt-l',tx.fmtL2); $s('fmt-d',tx.fmtD); $s('fmt-s',tx.fmtS);
@@ -1110,7 +1157,8 @@ function switchTab(tab){
     $('nb-'+id).classList.toggle('on',id===tab);
   });
   if(tab==='history'||tab==='dash')setTimeout(updateCharts,50);
-  if(tab==='food'){loadSavedMenusUI();loadFoodLog();}
+  if(tab==='food'){loadSavedMenusUI();loadFoodLog();setFoodMode('upload');}
+  else stopCamera(); // always stop camera when leaving food tab
 }
 
 // BMI preview
@@ -1149,47 +1197,196 @@ function showFoodTab(tab){
 // ═══════════════════════════════════════════
 // FOOD UPLOAD
 // ═══════════════════════════════════════════
+// ── FOOD MODE SWITCHER ────────────────────────────────────────────
+let camStream = null;
+let currentFoodMode = 'upload';
+
+function setFoodMode(mode){
+  currentFoodMode = mode;
+  // Toggle panel visibility
+  ['upload','camera','text'].forEach(m => {
+    $('fm-'+m).style.display = m===mode ? 'block' : 'none';
+    const btn = $('fm-btn-'+m);
+    btn.className = m===mode ? 'btn btn-g btn-sm' : 'btn btn-s btn-sm';
+    btn.style.flex = '1';
+  });
+  // Hide preview + confirm when switching mode
+  $('f-pw').style.display='none';
+  $('f-cf').style.display='none';
+  $('f-cfbox').innerHTML='';
+  foodB64=null; window._lastFood=null;
+  // Start/stop camera
+  if(mode==='camera') startCamera();
+  else stopCamera();
+  // Clear text
+  if(mode!=='text') { const ti=$('f-text-inp'); if(ti) ti.value=''; }
+}
+
+// ── UPLOAD MODE ───────────────────────────────────────────────────
 function handleFoodImg(e){
   const f=e.target.files[0]; if(!f)return;
   const reader=new FileReader();
   reader.onload=ev=>{
-    const dataUrl=ev.target.result;
-    // Compress image using canvas before sending to Gemini
-    // Large images cause "unterminated string" JSON errors
-    const img=new Image();
-    img.onload=()=>{
-      const canvas=document.createElement('canvas');
-      // Max dimension 800px to keep base64 small enough
-      const MAX=800;
-      let w=img.width, h=img.height;
-      if(w>MAX||h>MAX){
-        if(w>h){ h=Math.round(h*MAX/w); w=MAX; }
-        else{ w=Math.round(w*MAX/h); h=MAX; }
-      }
-      canvas.width=w; canvas.height=h;
-      const ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0,w,h);
-      // Convert to JPEG at 80% quality
-      const compressed=canvas.toDataURL('image/jpeg',0.8);
-      foodB64={data:compressed.split(',')[1], mime:'image/jpeg'};
-      console.log('[Food image] original size:', Math.round(dataUrl.length/1024)+'KB',
-                  '→ compressed:', Math.round(compressed.length/1024)+'KB',
-                  'dimensions:', w+'x'+h);
-      $('f-pi').src=compressed;
-      $('f-pw').style.display='block';
-      $('dz').style.display='none';
-      $('f-cf').style.display='none';
-      $('f-cfbox').innerHTML='';
-    };
-    img.src=dataUrl;
+    compressAndSetImage(ev.target.result);
   };
   reader.readAsDataURL(f);
 }
 
+function compressAndSetImage(dataUrl){
+  const img=new Image();
+  img.onload=()=>{
+    const canvas=document.createElement('canvas');
+    const MAX=800;
+    let w=img.width, h=img.height;
+    if(w>MAX||h>MAX){
+      if(w>h){ h=Math.round(h*MAX/w); w=MAX; }
+      else{ w=Math.round(w*MAX/h); h=MAX; }
+    }
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    const compressed=canvas.toDataURL('image/jpeg',0.8);
+    foodB64={data:compressed.split(',')[1], mime:'image/jpeg'};
+    console.log('[Food image] compressed to', Math.round(compressed.length/1024)+'KB', w+'x'+h);
+    $('f-pi').src=compressed;
+    $('f-pw').style.display='block';
+    // Hide the dropzone so confirm shows cleanly
+    $('dz').style.display='none';
+    $('f-cf').style.display='none';
+    $('f-cfbox').innerHTML='';
+  };
+  img.src=dataUrl;
+}
+
+// ── CAMERA MODE ───────────────────────────────────────────────────
+async function startCamera(){
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},
+      audio:false
+    });
+    $('cam-video').srcObject=camStream;
+    $('cam-snap-btn').disabled=false;
+  }catch(err){
+    console.error('Camera error:',err);
+    // Fall back to file upload if camera denied
+    alert(lang==='he'?'לא ניתן לגשת למצלמה. נסה להעלות תמונה.':'Camera access denied. Please use upload instead.');
+    setFoodMode('upload');
+  }
+}
+
+function stopCamera(){
+  if(camStream){
+    camStream.getTracks().forEach(t=>t.stop());
+    camStream=null;
+  }
+  const v=$('cam-video');
+  if(v) v.srcObject=null;
+}
+
+async function snapPhoto(){
+  const video=$('cam-video');
+  const canvas=$('cam-canvas');
+  if(!video||!canvas)return;
+
+  // 3-second countdown
+  const countdown=$('cam-countdown');
+  countdown.style.display='flex';
+  for(let i=3;i>=1;i--){
+    countdown.textContent=i;
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  countdown.style.display='none';
+
+  // Capture frame from video
+  canvas.width=video.videoWidth||640;
+  canvas.height=video.videoHeight||480;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const dataUrl=canvas.toDataURL('image/jpeg',0.9);
+
+  // Stop camera stream (photo not saved to device — stays in memory only)
+  stopCamera();
+  $('fm-camera').style.display='none';
+
+  // Compress and show preview
+  compressAndSetImage(dataUrl);
+}
+
+// ── TEXT MODE ─────────────────────────────────────────────────────
+async function analyzeText(){
+  const txt=$('f-text-inp').value.trim();
+  if(!txt){ toast(lang==='he'?'תאר מה אכלת':'Please describe what you ate'); return; }
+
+  $('f-ld').style.display='flex';
+  $('f-cf').style.display='none';
+  const tx=t();
+
+  const foodSchema={
+    type:'object',
+    properties:{
+      name:{type:'string',maxLength:40},
+      serving_g:{type:'integer'},
+      calories:{type:'integer'},
+      protein_g:{type:'number'},
+      carbs_g:{type:'number'},
+      fat_g:{type:'number'},
+      fiber_g:{type:'number'},
+      tip:{type:'string',maxLength:60}
+    },
+    required:['name','serving_g','calories','protein_g','carbs_g','fat_g','fiber_g','tip']
+  };
+
+  try{
+    const prompt = lang==='he'
+      ? 'אתה מומחה תזונה. המשתמש אכל: "'+txt+'". חשב ערכים תזונתיים מדויקים.'
+      : 'You are a nutrition expert. The user ate: "'+txt+'". Calculate accurate nutritional values.';
+
+    const raw=await callGemini([{text:prompt}],1024,1,foodSchema);
+    const r=parseJSON(raw);
+    window._lastFood=r;
+    showFoodConfirm(r, tx);
+  }catch(err){
+    console.error(err);
+    $('f-cfbox').innerHTML=`<div style="color:var(--red);font-size:14px;font-weight:600">❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small></div>`;
+    $('f-cf').style.display='block';
+  }
+  $('f-ld').style.display='none';
+}
+
+// ── SHARED: show confirm panel ────────────────────────────────────
+function showFoodConfirm(r, tx){
+  $('f-cfbox').innerHTML=`
+    <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">✨ AI Analysis</div>
+    <div style="font-size:17px;font-weight:800">${r.name}</div>
+    <div style="font-size:12px;color:var(--green);margin-top:2px">${r.serving_g ? r.serving_g+'g' : (r.serving||'')}</div>
+    <div style="display:flex;align-items:baseline;gap:5px;margin:8px 0">
+      <span style="font-size:30px;font-weight:900;color:var(--green)">${r.calories}</span>
+      <span style="font-size:13px;color:var(--text2)">${tx.kcal}</span>
+    </div>
+    <div class="mac-g">
+      <div class="mb"><div class="mv">${r.protein_g}g</div><div class="mn">${tx.macP}</div></div>
+      <div class="mb"><div class="mv">${r.carbs_g}g</div><div class="mn">${tx.macC}</div></div>
+      <div class="mb"><div class="mv">${r.fat_g}g</div><div class="mn">${tx.macF}</div></div>
+      <div class="mb"><div class="mv">${r.fiber_g}g</div><div class="mn">${tx.macFib}</div></div>
+    </div>
+    ${r.tip?`<div style="margin-top:9px;font-size:12px;color:var(--gdk);border-top:1px solid rgba(22,163,74,.2);padding-top:9px">💡 ${r.tip}</div>`:''}`;
+  $('f-dsh').value=r.name;
+  $('f-dt').value=today();
+  const hr=new Date().getHours();
+  $('f-mt').value=hr<10?'Breakfast':hr<14?'Lunch':hr<18?'Dinner':'Snack';
+  $('f-cf').style.display='block';
+}
+
 function resetFood(){
   foodB64=null; window._lastFood=null;
-  $('dz').style.display='block'; $('f-pw').style.display='none';
-  $('f-cf').style.display='none'; $('f-inp').value='';
+  stopCamera();
+  // Reset to upload mode cleanly
+  $('f-pw').style.display='none';
+  $('f-cf').style.display='none';
+  $('f-cfbox').innerHTML='';
+  $('f-inp').value='';
+  $('dz').style.display='block';
+  // Show whichever mode panel is active
+  setFoodMode(currentFoodMode);
 }
 
 // ═══════════════════════════════════════════
@@ -1306,26 +1503,7 @@ async function analyzeFood(){
     ],1024,1,foodSchema);
     const r=parseJSON(raw);
     window._lastFood=r;
-    $('f-cfbox').innerHTML=`
-      <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">✨ AI Analysis</div>
-      <div style="font-size:17px;font-weight:800">${r.name}</div>
-      <div style="font-size:12px;color:var(--green);margin-top:2px">${r.serving_g ? r.serving_g+'g' : (r.serving||'')}</div>
-      <div style="display:flex;align-items:baseline;gap:5px;margin:8px 0">
-        <span style="font-size:30px;font-weight:900;color:var(--green)">${r.calories}</span>
-        <span style="font-size:13px;color:var(--text2)">${tx.kcal}</span>
-      </div>
-      <div class="mac-g">
-        <div class="mb"><div class="mv">${r.protein_g}g</div><div class="mn">${tx.macP}</div></div>
-        <div class="mb"><div class="mv">${r.carbs_g}g</div><div class="mn">${tx.macC}</div></div>
-        <div class="mb"><div class="mv">${r.fat_g}g</div><div class="mn">${tx.macF}</div></div>
-        <div class="mb"><div class="mv">${r.fiber_g}g</div><div class="mn">${tx.macFib}</div></div>
-      </div>
-      ${r.tip?`<div style="margin-top:9px;font-size:12px;color:var(--gdk);border-top:1px solid rgba(22,163,74,.2);padding-top:9px">💡 ${r.tip}</div>`:''}`;
-    $('f-dsh').value=r.name;
-    $('f-dt').value=today();
-    const hr=new Date().getHours();
-    $('f-mt').value=hr<10?'Breakfast':hr<14?'Lunch':hr<18?'Dinner':'Snack';
-    $('f-cf').style.display='block';
+    showFoodConfirm(r, tx);
   }catch(err){
     console.error(err);
     $('f-cfbox').innerHTML=`<div style="color:var(--red);font-size:14px;font-weight:600">❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small></div>`;
