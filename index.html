@@ -372,6 +372,9 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
             <div class="rr">
               <button class="rb" id="r7" onclick="setRange(7)">7d</button>
               <button class="rb on" id="r30" onclick="setRange(30)">30d</button>
+              <button class="rb" id="r90" onclick="setRange(90)">3m</button>
+              <button class="rb" id="r180" onclick="setRange(180)">6m</button>
+              <button class="rb" id="r365" onclick="setRange(365)">1y</button>
               <button class="rb" id="rA" onclick="setRange(0)">All</button>
             </div>
           </div>
@@ -569,6 +572,9 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
             <div class="fld">
               <label class="flbl" id="m-cl">Calories/day</label>
               <input type="number" class="fi" id="m-c" placeholder="1800" step="50" min="1000" max="5000">
+              <div id="m-cal-rec-box" style="display:none;margin-top:6px;padding:8px 11px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.25)">
+                <div style="font-size:11px;color:var(--amber);font-weight:700" id="m-cal-rec-txt"></div>
+              </div>
             </div>
             <div class="fld">
               <label class="flbl" id="m-dl">Diet type</label>
@@ -676,6 +682,14 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
         <div class="fld">
           <label class="flbl" id="st-cal-l">Daily calorie goal</label>
           <input type="number" class="fi" id="s-cal" placeholder="2000" step="50" min="1000" max="5000">
+          <div id="cal-rec-box" style="display:none;margin-top:8px;padding:10px 13px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.25)">
+            <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px" id="cal-rec-label">Recommended for your goal</div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-size:22px;font-weight:800;color:var(--amber)" id="cal-rec-val">–</span>
+              <span style="font-size:13px;color:var(--amber)" id="cal-rec-kcal">kcal/day</span>
+            </div>
+            <div style="font-size:12px;color:var(--amber);margin-top:3px;opacity:.85" id="cal-rec-detail"></div>
+          </div>
         </div>
         <div class="divx"></div>
         <button class="btn btn-g" onclick="saveSettings()"><span class="ico">💾</span><span id="st-sv">Save Settings</span></button>
@@ -963,6 +977,8 @@ async function saveSettings() {
 
   setts={...setts,...payload};
   toast(t().stsaved);
+  // Reset menu cal input so recommendation re-applies with new goal
+  const mci=$('m-c'); if(mci) mci.value='';
   updateAll();
 }
 
@@ -1035,7 +1051,111 @@ async function deleteEntry(id) {
 // ═══════════════════════════════════════════
 // UPDATE ALL UI
 // ═══════════════════════════════════════════
-function updateAll(){ updateDash(); updateHistory(); updateCharts(); updateStreak(); updateTodayCals(); }
+// ── CALORIE RECOMMENDATION ───────────────────────────────────────────────
+// Calculates daily calorie recommendation based on:
+// - Most recent weight entry
+// - Goal weight from settings
+// - Days remaining to goal date
+// Uses Mifflin-St Jeor BMR + activity factor, then adjusts for deficit/surplus
+function calcCalorieRecommendation(){
+  if(!entries.length) return null;
+  const last = entries[entries.length-1];
+  const gw   = parseFloat(setts.goal_weight);
+  const gd   = setts.goal_date;
+  if(!gw || !gd) return null;
+
+  const today = new Date();
+  const goalDate = new Date(gd);
+  const daysLeft = Math.round((goalDate - today) / (1000*60*60*24));
+  if(daysLeft <= 0) return null; // goal date passed
+
+  const currentWeight = parseFloat(last.weight);
+  const weightDiff    = currentWeight - gw; // positive = need to lose, negative = need to gain
+  const totalKcalDiff = weightDiff * 7700;  // 1kg fat ≈ 7700 kcal
+  const dailyAdjust   = totalKcalDiff / daysLeft; // kcal/day to cut or add
+
+  // Estimate BMR using simplified Mifflin-St Jeor
+  const age    = setts.age    || 35;
+  const height = setts.height || 170;
+  const isMale = (setts.gender === 'male');
+  // BMR kg/cm version
+  const bmr = isMale
+    ? (10 * currentWeight) + (6.25 * height) - (5 * age) + 5
+    : (10 * currentWeight) + (6.25 * height) - (5 * age) - 161;
+  // Assume lightly active (factor 1.375)
+  const tdee = Math.round(bmr * 1.375);
+  // Recommended daily intake
+  let rec = Math.round(tdee - dailyAdjust);
+  // Safety bounds: never below 1200, never above 4000
+  rec = Math.max(1200, Math.min(4000, rec));
+
+  return {
+    rec,
+    tdee,
+    daysLeft,
+    weightDiff: +weightDiff.toFixed(1),
+    dailyAdjust: +dailyAdjust.toFixed(0)
+  };
+}
+
+// Apply calorie recommendation to Settings + Menu screens
+function applyCalorieRecommendation(){
+  const data = calcCalorieRecommendation();
+  const isHe = lang === 'he';
+  const recBox   = $('cal-rec-box');
+  const recVal   = $('cal-rec-val');
+  const recDetail= $('cal-rec-detail');
+  const recKcal  = $('cal-rec-kcal');
+  const mRecBox  = $('m-cal-rec-box');
+  const mRecTxt  = $('m-cal-rec-txt');
+  const mCalInp  = $('m-c');
+
+  if(!data){
+    if(recBox) recBox.style.display='none';
+    if(mRecBox) mRecBox.style.display='none';
+    return;
+  }
+
+  const {rec, daysLeft, weightDiff, dailyAdjust} = data;
+  const loseGain = weightDiff > 0
+    ? (isHe?'להוריד':'lose')
+    : (isHe?'להעלות':'gain');
+  const absKg = Math.abs(weightDiff).toFixed(1);
+  const detail = isHe
+    ? `${absKg} ק"ג ${loseGain} ב-${daysLeft} ימים · ${Math.abs(dailyAdjust)} קק"ל/יום הפרש`
+    : `${absKg} kg to ${loseGain} in ${daysLeft} days · ${Math.abs(dailyAdjust)} kcal/day diff`;
+
+  // ── Settings box ──
+  if(recBox){
+    recBox.style.display='block';
+    if(recVal)  recVal.textContent = rec;
+    if(recKcal) recKcal.textContent = isHe?'קק"ל/יום':'kcal/day';
+    if(recDetail) recDetail.textContent = detail;
+    const recLbl=$('cal-rec-label');
+    if(recLbl) recLbl.textContent = isHe?'מומלץ להשגת המטרה':'Recommended for your goal';
+  }
+
+  // ── Menu box ──
+  if(mRecBox && mRecTxt){
+    mRecBox.style.display='block';
+    mRecTxt.textContent = isHe
+      ? `💡 מומלץ: ${rec} קק"ל/יום להשגת המטרה`
+      : `💡 Recommended: ${rec} kcal/day to reach your goal`;
+  }
+
+  // ── Auto-fill menu calories input ──
+  // Rule: if user set a custom calorie goal in settings, use that; else use recommendation
+  if(mCalInp && !mCalInp.value){
+    const userGoal = setts.daily_calorie_goal;
+    if(userGoal && userGoal > 0){
+      mCalInp.value = userGoal;
+    } else {
+      mCalInp.value = rec;
+    }
+  }
+}
+
+function updateAll(){ updateDash(); updateHistory(); updateCharts(); updateStreak(); updateTodayCals(); applyCalorieRecommendation(); }
 
 function updateDash() {
   const has=entries.length>0;
@@ -1104,14 +1224,18 @@ function updateHistory() {
 }
 
 function setRange(d){
-  cRange=d; ['r7','r30','rA'].forEach(id=>$(id).classList.remove('on'));
-  $(d===7?'r7':d===30?'r30':'rA').classList.add('on'); updateCharts();
+  cRange=d;
+  ['r7','r30','r90','r180','r365','rA'].forEach(id=>{const e=$(id);if(e)e.classList.remove('on');});
+  const activeId = d===7?'r7':d===30?'r30':d===90?'r90':d===180?'r180':d===365?'r365':'rA';
+  const activeEl=$(activeId); if(activeEl)activeEl.classList.add('on');
+  updateCharts();
 }
 
 function filtE(){
   if(!cRange)return entries;
   const c=new Date(); c.setDate(c.getDate()-cRange);
-  return entries.filter(e=>e.date>=c.toISOString().split('T')[0]);
+  const cs=c.toISOString().split('T')[0];
+  return entries.filter(e=>e.date>=cs);
 }
 
 async function updateCharts(){
@@ -1157,7 +1281,8 @@ function switchTab(tab){
     $('nb-'+id).classList.toggle('on',id===tab);
   });
   if(tab==='history'||tab==='dash')setTimeout(updateCharts,50);
-  if(tab==='food'){loadSavedMenusUI();loadFoodLog();setFoodMode('upload');}
+  if(tab==='settings')applyCalorieRecommendation();
+  if(tab==='food'){loadSavedMenusUI();loadFoodLog();setFoodMode('upload');applyCalorieRecommendation();}
   else stopCamera(); // always stop camera when leaving food tab
 }
 
