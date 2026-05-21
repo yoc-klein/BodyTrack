@@ -1349,21 +1349,69 @@ async function analyzeText(){
     showFoodConfirm(r, tx);
   }catch(err){
     console.error(err);
-    $('f-cfbox').innerHTML=`<div style="color:var(--red);font-size:14px;font-weight:600">❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small></div>`;
-    $('f-cf').style.display='block';
+    _baseFood=null; window._lastFood=null;
+    $('f-cf').style.display='none';
+    $('f-cfbox').innerHTML='';
+    const errDiv=document.createElement('div');
+    errDiv.id='f-err-msg';
+    errDiv.style.cssText='color:var(--red);font-size:14px;font-weight:600;padding:12px 0';
+    errDiv.innerHTML=`❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small>`;
+    const old=$('f-err-msg'); if(old)old.remove();
+    $('f-ld').insertAdjacentElement('afterend', errDiv);
   }
   $('f-ld').style.display='none';
 }
 
 // ── SHARED: show confirm panel ────────────────────────────────────
-// Stores base (full) nutrition for partial eating calculation
 let _baseFood = null;
 let _portionPct = 100;
+let _customPortionOpen = false;
 
 function showFoodConfirm(r, tx){
   _baseFood = r;
   _portionPct = 100;
-  renderConfirmBox(r, tx, 100);
+  _customPortionOpen = false;
+  // Build the static confirm box HTML once
+  const isHe = lang === 'he';
+  $('f-cfbox').innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">✨ ${tx.fair||'AI Analysis'}</div>
+    <div style="font-size:17px;font-weight:800" id="cfb-name">${r.name}</div>
+    <div style="font-size:12px;color:var(--green);margin-top:2px" id="cfb-serving">${r.serving_g ? r.serving_g+'g' : ''}</div>
+    <div style="display:flex;align-items:baseline;gap:5px;margin:8px 0">
+      <span style="font-size:30px;font-weight:900;color:var(--green)" id="cfb-cal">${r.calories}</span>
+      <span style="font-size:13px;color:var(--text2)">${tx.kcal}</span>
+    </div>
+    <div class="mac-g">
+      <div class="mb"><div class="mv" id="cfb-p">${r.protein_g}g</div><div class="mn">${tx.macP}</div></div>
+      <div class="mb"><div class="mv" id="cfb-c">${r.carbs_g}g</div><div class="mn">${tx.macC}</div></div>
+      <div class="mb"><div class="mv" id="cfb-f">${r.fat_g}g</div><div class="mn">${tx.macF}</div></div>
+      <div class="mb"><div class="mv" id="cfb-fi">${r.fiber_g}g</div><div class="mn">${tx.macFib}</div></div>
+    </div>
+    ${r.tip?`<div style="margin-top:9px;font-size:12px;color:var(--gdk);border-top:1px solid rgba(22,163,74,.2);padding-top:9px">💡 ${r.tip}</div>`:''}
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:7px">${isHe?'🍽️ כמה אכלת?':'🍽️ How much did you eat?'}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="portion-btns">
+        ${[100,75,50,33,25].map(p=>`
+          <button id="pbtn-${p}" onclick="setPortion(${p})"
+            style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid ${p===100?'var(--green)':'var(--border2)'};background:${p===100?'var(--green)':'var(--card2)'};color:${p===100?'#fff':'var(--text2)'};cursor:pointer;transition:all .15s">
+            ${p===100?(isHe?'הכל 100%':'All 100%'):p+'%'}
+          </button>`).join('')}
+        <button id="pbtn-custom" onclick="toggleCustomPortion()"
+          style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--border2);background:var(--card2);color:var(--text2);cursor:pointer;transition:all .15s">
+          ${isHe?'אחר...':'Other...'}
+        </button>
+      </div>
+      <div id="custom-pct-wrap" style="display:none;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="custom-pct-inp" class="fi" style="width:90px;padding:8px"
+            min="1" max="100" placeholder="${isHe?'אחוז':'%'}">
+          <button onclick="applyCustomPortion()"
+            style="padding:8px 14px;border-radius:var(--r2);background:var(--green);color:#fff;border:none;font-weight:700;cursor:pointer;font-size:13px">
+            ${isHe?'אישור':'OK'}
+          </button>
+        </div>
+      </div>
+    </div>`;
   $('f-dsh').value = r.name;
   $('f-dt').value = today();
   const hr = new Date().getHours();
@@ -1371,72 +1419,85 @@ function showFoodConfirm(r, tx){
   $('f-cf').style.display = 'block';
 }
 
-function renderConfirmBox(r, tx, pct){
+// Update only the numeric values — don't re-render the whole box
+function updatePortionDisplay(pct){
+  if(!_baseFood) return;
   const factor = pct / 100;
-  const cal   = Math.round(r.calories   * factor);
-  const prot  = +(r.protein_g * factor).toFixed(1);
-  const carbs = +(r.carbs_g   * factor).toFixed(1);
-  const fat   = +(r.fat_g     * factor).toFixed(1);
-  const fiber = +(r.fiber_g   * factor).toFixed(1);
-  const isHe  = lang === 'he';
-
-  $('f-cfbox').innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">✨ ${tx.fair||'AI Analysis'}</div>
-    <div style="font-size:17px;font-weight:800">${r.name}</div>
-    <div style="font-size:12px;color:var(--green);margin-top:2px">${r.serving_g ? r.serving_g+'g' : ''} ${pct<100?'<span style="color:var(--amber);font-weight:700">('+pct+'%)</span>':''}</div>
-    <div style="display:flex;align-items:baseline;gap:5px;margin:8px 0">
-      <span style="font-size:30px;font-weight:900;color:var(--green)">${cal}</span>
-      <span style="font-size:13px;color:var(--text2)">${tx.kcal}</span>
-    </div>
-    <div class="mac-g">
-      <div class="mb"><div class="mv">${prot}g</div><div class="mn">${tx.macP}</div></div>
-      <div class="mb"><div class="mv">${carbs}g</div><div class="mn">${tx.macC}</div></div>
-      <div class="mb"><div class="mv">${fat}g</div><div class="mn">${tx.macF}</div></div>
-      <div class="mb"><div class="mv">${fiber}g</div><div class="mn">${tx.macFib}</div></div>
-    </div>
-    ${r.tip?`<div style="margin-top:9px;font-size:12px;color:var(--gdk);border-top:1px solid rgba(22,163,74,.2);padding-top:9px">💡 ${r.tip}</div>`:''}
-    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:7px">${isHe?'🍽️ כמה אכלת?':'🍽️ How much did you eat?'}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${[100,75,50,33,25].map(p=>`
-          <button onclick="setPortion(${p})"
-            style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid ${p===pct?'var(--green)':'var(--border2)'};background:${p===pct?'var(--green)':'var(--card2)'};color:${p===pct?'#fff':'var(--text2)'};cursor:pointer;transition:all .15s">
-            ${p===100?(isHe?'הכל 100%':'All 100%'):p+'%'}
-          </button>`).join('')}
-        <button onclick="showCustomPortion()"
-          style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--border2);background:var(--card2);color:var(--text2);cursor:pointer">
-          ${isHe?'אחר...':'Other...'}
-        </button>
-      </div>
-      <div id="custom-pct-wrap" style="display:none;margin-top:8px;display:flex;align-items:center;gap:8px">
-        <input type="number" id="custom-pct-inp" class="fi" style="width:90px;padding:8px" min="1" max="100" placeholder="${isHe?'%':'%'}" onchange="setPortion(parseInt(this.value)||100)">
-        <span style="font-size:13px;color:var(--text2)">%</span>
-      </div>
-    </div>`;
+  const cal   = Math.round(_baseFood.calories   * factor);
+  const prot  = +(_baseFood.protein_g * factor).toFixed(1);
+  const carbs = +(_baseFood.carbs_g   * factor).toFixed(1);
+  const fat   = +(_baseFood.fat_g     * factor).toFixed(1);
+  const fiber = +(_baseFood.fiber_g   * factor).toFixed(1);
+  // Update numbers in place — no DOM rebuild
+  const sv = id => { const e=$(id); if(e) e.textContent=sv._v; };
+  const set = (id,v) => { const e=$(id); if(e) e.textContent=v; };
+  set('cfb-cal', cal);
+  set('cfb-p',   prot+'g');
+  set('cfb-c',   carbs+'g');
+  set('cfb-f',   fat+'g');
+  set('cfb-fi',  fiber+'g');
+  // Update serving label with percentage badge
+  const servEl = $('cfb-serving');
+  if(servEl) servEl.innerHTML = (_baseFood.serving_g ? _baseFood.serving_g+'g ' : '') +
+    (pct<100 ? '<span style="color:var(--amber);font-weight:700">('+pct+'%)</span>' : '');
+  // Highlight active button
+  [100,75,50,33,25].forEach(p=>{
+    const btn=$('pbtn-'+p);
+    if(!btn)return;
+    const active = p===pct;
+    btn.style.background = active?'var(--green)':'var(--card2)';
+    btn.style.color       = active?'#fff':'var(--text2)';
+    btn.style.borderColor = active?'var(--green)':'var(--border2)';
+  });
+  // Highlight "Other" button if custom value
+  const customBtn = $('pbtn-custom');
+  if(customBtn){
+    const customActive = ![100,75,50,33,25].includes(pct);
+    customBtn.style.background  = customActive?'var(--green)':'var(--card2)';
+    customBtn.style.color        = customActive?'#fff':'var(--text2)';
+    customBtn.style.borderColor  = customActive?'var(--green)':'var(--border2)';
+  }
 }
 
 function setPortion(pct){
   _portionPct = Math.min(100, Math.max(1, pct));
-  renderConfirmBox(_baseFood, t(), _portionPct);
-  // Restore dish name and form values
+  updatePortionDisplay(_portionPct);
   $('f-dsh').value = _baseFood.name;
 }
 
-function showCustomPortion(){
-  const w = $('custom-pct-wrap');
-  if(w) { w.style.display = w.style.display==='none'?'flex':'none'; }
+function toggleCustomPortion(){
+  _customPortionOpen = !_customPortionOpen;
+  const wrap = $('custom-pct-wrap');
+  if(wrap) wrap.style.display = _customPortionOpen ? 'block' : 'none';
+  // If opening, focus the input
+  if(_customPortionOpen){
+    setTimeout(()=>{ const inp=$('custom-pct-inp'); if(inp)inp.focus(); },50);
+  }
+}
+
+function applyCustomPortion(){
+  const inp = $('custom-pct-inp');
+  const val = parseInt(inp ? inp.value : 0);
+  if(!val || val<1 || val>100){
+    toast(lang==='he'?'הזן מספר בין 1 ל-100':'Enter a number between 1 and 100');
+    return;
+  }
+  setPortion(val);
+  // Keep input value visible and close wrap
+  _customPortionOpen = false;
+  const wrap = $('custom-pct-wrap');
+  if(wrap) wrap.style.display = 'none';
 }
 
 function resetFood(){
   foodB64=null; window._lastFood=null;
+  _baseFood=null; _portionPct=100; _customPortionOpen=false;
   stopCamera();
-  // Reset to upload mode cleanly
   $('f-pw').style.display='none';
   $('f-cf').style.display='none';
   $('f-cfbox').innerHTML='';
   $('f-inp').value='';
   $('dz').style.display='block';
-  // Show whichever mode panel is active
   setFoodMode(currentFoodMode);
 }
 
@@ -1493,10 +1554,11 @@ async function callGemini(parts, maxOut=2048, attempt=1, schema=null){
 
 function parseJSON(raw){
   if(!raw || !raw.trim()) throw new Error('Gemini returned empty text response');
+
   // Strip markdown fences
   let s=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
-  // Try to find complete JSON object or array
-  // Look for first { or [ and matching last } or ]
+
+  // Try clean JSON first
   const isArr = s.indexOf('[') >= 0 && (s.indexOf('[') < s.indexOf('{') || s.indexOf('{') < 0);
   if(isArr){
     const fi=s.indexOf('['), li=s.lastIndexOf(']');
@@ -1509,21 +1571,56 @@ function parseJSON(raw){
       try{ return JSON.parse(s.slice(fi,li+1)); }catch(e){}
     }
   }
-  // Last resort: try to fix truncated JSON by closing open brackets
+
+  // Try fixing truncated JSON
   try{
     let attempt=s;
-    // Count unclosed braces and brackets
     let opens=0, openb=0;
     for(const c of attempt){ if(c==='{')opens++; if(c==='}')opens--; if(c==='[')openb++; if(c===']')openb--; }
-    // Close any unclosed strings first (find last " that doesn't have a closing ")
     if(attempt.match(/"[^"]*$/)) attempt=attempt.replace(/"[^"]*$/, '"');
-    // Close unclosed objects/arrays
     while(openb>0){ attempt+=']}'; openb--; }
     while(opens>0){ attempt+='}'; opens--; }
     return JSON.parse(attempt);
-  }catch(e){
-    throw new Error('No JSON found in response: '+s.slice(0,300));
+  }catch(e){}
+
+  // ── MARKDOWN FALLBACK ────────────────────────────────────────────
+  // Gemini sometimes returns Hebrew/markdown instead of JSON.
+  // Extract numbers from the text and build a nutrition object.
+  console.warn('[parseJSON] Falling back to markdown extraction. Raw:', s.slice(0,200));
+  const extractNum = (patterns) => {
+    for(const p of patterns){
+      const m = s.match(p);
+      if(m) return parseFloat(m[1].replace(',','.'));
+    }
+    return null;
+  };
+  // Extract dish name — first bold text or first line
+  let name = '';
+  const boldMatch = s.match(/\*\*([^*\n]{2,40})\*\*/);
+  if(boldMatch) name = boldMatch[1].replace(/[*:]/g,'').trim();
+  if(!name){ const firstLine = s.split('\n')[0].replace(/[*#:]/g,'').trim(); name=firstLine.slice(0,40)||'Unknown dish'; }
+
+  const cal   = extractNum([/קלוריות[^\d]*(\d+)/,/calories[^\d]*(\d+)/i,/(\d+)\s*(?:קק"ל|kcal)/i]);
+  const prot  = extractNum([/חלבון[^\d]*(\d+)/,/protein[^\d]*(\d+)/i,/(\d+)\s*ג.*חלבון/]);
+  const carbs = extractNum([/פחמימות[^\d]*(\d+)/,/carb[^\d]*(\d+)/i,/(\d+)\s*ג.*פחמ/]);
+  const fat   = extractNum([/שומן[^\d]*(\d+)/,/fat[^\d]*(\d+)/i,/(\d+)\s*ג.*שומן/]);
+  const fiber = extractNum([/סיבים[^\d]*(\d+)/,/fiber[^\d]*(\d+)/i,/(\d+)\s*ג.*סיב/]);
+
+  if(cal){
+    console.log('[parseJSON] Markdown extraction succeeded:', {name,cal,prot,carbs,fat,fiber});
+    return {
+      name: name||'Unknown dish',
+      serving_g: 200,
+      calories:  cal,
+      protein_g: prot||0,
+      carbs_g:   carbs||0,
+      fat_g:     fat||0,
+      fiber_g:   fiber||0,
+      tip: ''
+    };
   }
+
+  throw new Error('No JSON found in response: '+s.slice(0,300));
 }
 
 // ═══════════════════════════════════════════
@@ -1532,6 +1629,8 @@ function parseJSON(raw){
 async function analyzeFood(){
   if(!foodB64)return;
   $('f-ld').style.display='flex'; $('f-cf').style.display='none';
+  // Clear previous error message if any
+  const prevErr=$('f-err-msg'); if(prevErr)prevErr.remove();
   const tx=t();
   try{
     const foodSchema={
@@ -1550,15 +1649,23 @@ async function analyzeFood(){
     };
     const raw=await callGemini([
       {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
-      {text:'You are a nutrition expert. Analyze this food image and estimate the nutritional content. '+(lang==='he'?'Use Hebrew for the name and tip fields.':'Use English for name and tip.')}
+      {text:'IMPORTANT: Respond with ONLY a JSON object. No markdown, no asterisks, no bullet points, no Hebrew text outside JSON, no explanation. Just the raw JSON. '+(lang==='he'?'Use Hebrew for name and tip values only, inside the JSON.':'')+'Analyze this food image. JSON format: {"name":"food name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip"}'}
     ],4096,1,foodSchema);
     const r=parseJSON(raw);
     window._lastFood=r;
     showFoodConfirm(r, tx);
   }catch(err){
     console.error(err);
-    $('f-cfbox').innerHTML=`<div style="color:var(--red);font-size:14px;font-weight:600">❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small></div>`;
-    $('f-cf').style.display='block';
+    // Clear any stale food result — never show old data after a failure
+    _baseFood=null; window._lastFood=null;
+    $('f-cf').style.display='none';
+    $('f-cfbox').innerHTML='';
+    const errDiv=document.createElement('div');
+    errDiv.id='f-err-msg';
+    errDiv.style.cssText='color:var(--red);font-size:14px;font-weight:600;padding:12px 0';
+    errDiv.innerHTML=`❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small>`;
+    const oldErr=$('f-err-msg'); if(oldErr)oldErr.remove();
+    $('f-ld').insertAdjacentElement('afterend', errDiv);
   }
   $('f-ld').style.display='none';
 }
