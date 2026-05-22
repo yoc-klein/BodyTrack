@@ -472,6 +472,9 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
               <div style="font-size:14px;font-weight:600" id="f-tap">Tap to upload food photo</div>
               <div style="font-size:12px;color:var(--text3);margin-top:3px">JPEG · PNG · WEBP</div>
             </div>
+            <div id="portion-hint" style="margin-top:10px;padding:9px 12px;border-radius:var(--r2);background:var(--bl);border:1px solid rgba(37,99,235,.2);font-size:12px;color:var(--blue);line-height:1.5">
+              <span id="portion-hint-txt">📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.</span>
+            </div>
           </div>
 
           <!-- MODE: CAMERA -->
@@ -507,6 +510,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 
           <!-- CONFIRM STEP (shared by all 3 modes) -->
           <div id="f-cf" style="display:none;margin-top:12px">
+            <div id="lc-warning" style="display:none;margin-bottom:10px;padding:10px 12px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.3);font-size:12px;color:var(--amber);font-weight:600;line-height:1.5"></div>
             <div class="cfbox" id="f-cfbox"></div>
             <div class="fld mt">
               <label class="flbl" id="f-dsh-l">Dish name (edit if needed)</label>
@@ -872,6 +876,10 @@ function applyTX() {
   $s('h-ttl',tx.httl); $s('h-exp',tx.hexp); $s('h-bmi-l',tx.hbmil); $s('h-cal-l',tx.hcall);
   $s('ft-la',tx.ftla); $s('ft-ll',tx.ftll); $s('ft-lm',tx.ftlm);
   $s('f-ttl',tx.fttl); $s('f-sub',tx.fsub); $s('f-tap',tx.ftap);
+  const ph=$('portion-hint-txt');
+  if(ph) ph.innerHTML=lang==='he'
+    ? '📏 <b>טיפ:</b> לדיוק בגודל המנה, שים מטבע, מזלג או יד לצד האוכל לפני הצילום.'
+    : '📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.';
   $s('fm-upload-l',tx.fmUpload); $s('fm-camera-l',tx.fmCamera); $s('fm-text-l',tx.fmText);
   $s('cam-snap-l',tx.fmSnapL); $s('f-txt-l',tx.fTxtL); $s('f-txt-btn-l',tx.fTxtBtn);
   const fti=$('f-text-inp'); if(fti)fti.placeholder=tx.fTxtPh;
@@ -1542,6 +1550,18 @@ function showFoodConfirm(r, tx){
   const hr = new Date().getHours();
   $('f-mt').value = hr<10?'Breakfast':hr<14?'Lunch':hr<18?'Dinner':'Snack';
   $('f-cf').style.display = 'block';
+  // Show low-confidence warning if Gemini couldn't find a reference object
+  const lcWarn = $('lc-warning');
+  if(lcWarn){
+    if(r.low_confidence){
+      lcWarn.style.display='block';
+      lcWarn.textContent = lang==='he'
+        ? '⚠️ לא נמצא אובייקט ייחוס בתמונה — הגודל מוערך. לדיוק גבוה יותר, צלם שוב עם מטבע, מזלג או יד לצד האוכל.'
+        : '⚠️ No reference object found — portion size is estimated. For better accuracy, retake the photo with a coin, fork, or hand next to the food.';
+    }else{
+      lcWarn.style.display='none';
+    }
+  }
 }
 
 // Update only the numeric values — don't re-render the whole box
@@ -1741,7 +1761,8 @@ function parseJSON(raw){
       carbs_g:   carbs||0,
       fat_g:     fat||0,
       fiber_g:   fiber||0,
-      tip: ''
+      tip: '',
+      low_confidence: true
     };
   }
 
@@ -1768,13 +1789,22 @@ async function analyzeFood(){
         carbs_g:{type:'number'},
         fat_g:{type:'number'},
         fiber_g:{type:'number'},
-        tip:{type:'string',maxLength:30}
+        tip:{type:'string',maxLength:30},
+        low_confidence:{type:'boolean'}
       },
-      required:['name','serving_g','calories','protein_g','carbs_g','fat_g','fiber_g','tip']
+      required:['name','serving_g','calories','protein_g','carbs_g','fat_g','fiber_g']
     };
     const raw=await callGemini([
       {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
-      {text:'IMPORTANT: Respond with ONLY a JSON object. No markdown, no asterisks, no bullet points, no Hebrew text outside JSON, no explanation. Just the raw JSON. '+(lang==='he'?'Use Hebrew for name and tip values only, inside the JSON.':'')+'Analyze this food image. JSON format: {"name":"food name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip"}'}
+      {text:'IMPORTANT: Respond with ONLY a JSON object. No markdown, no asterisks, no bullet points, no explanation. Just raw JSON. '
+        +(lang==='he'?'Use Hebrew for name and tip values only, inside the JSON. ':'')
+        +'Analyze this food image carefully. PORTION ESTIMATION RULES: '
+        +'1) Look for reference objects in the image (coins, hands, phones, plates, cutlery, cups) to estimate real size. '
+        +'2) If a standard plate is visible, use typical plate diameter (26cm) as scale reference. '
+        +'3) If a fork/spoon is visible, use standard fork length (18cm) as scale. '
+        +'4) If no reference object is visible, estimate based on food type and typical serving sizes, then set low_confidence:true. '
+        +'5) Estimate serving_g based on visual volume and food density. '
+        +'JSON format: {"name":"food name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip","low_confidence":false}'}
     ],4096,1,foodSchema);
     const r=parseJSON(raw);
     window._lastFood=r;
