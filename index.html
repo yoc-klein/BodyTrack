@@ -482,10 +482,18 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
             <div id="cam-wrap" style="position:relative;border-radius:var(--r2);overflow:hidden;background:#000;margin-bottom:10px">
               <video id="cam-video" style="width:100%;max-height:260px;display:block;object-fit:cover" autoplay playsinline muted></video>
               <div id="cam-countdown" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:64px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
+              <!-- Hint overlay shown on top of video feed -->
+              <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);padding:7px 10px;font-size:11px;color:#fff;line-height:1.4">
+                <span id="cam-hint-overlay">📏 Place a coin, fork or hand next to food for accurate size</span>
+              </div>
             </div>
             <div class="gap8">
               <button class="btn btn-g" id="cam-snap-btn" onclick="snapPhoto()"><span class="ico">📸</span><span id="cam-snap-l">Take Photo</span></button>
               <button class="btn btn-s btn-sm" onclick="stopCamera()"><span class="ico">✕</span></button>
+            </div>
+            <!-- Same blue hint below buttons -->
+            <div style="margin-top:10px;padding:9px 12px;border-radius:var(--r2);background:var(--bl);border:1px solid rgba(37,99,235,.2);font-size:12px;color:var(--blue);line-height:1.5">
+              <span id="cam-hint-txt">📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.</span>
             </div>
             <canvas id="cam-canvas" style="display:none"></canvas>
           </div>
@@ -877,9 +885,15 @@ function applyTX() {
   $s('ft-la',tx.ftla); $s('ft-ll',tx.ftll); $s('ft-lm',tx.ftlm);
   $s('f-ttl',tx.fttl); $s('f-sub',tx.fsub); $s('f-tap',tx.ftap);
   const ph=$('portion-hint-txt');
-  if(ph) ph.innerHTML=lang==='he'
-    ? '📏 <b>טיפ:</b> לדיוק בגודל המנה, שים מטבע, מזלג או יד לצד האוכל לפני הצילום.'
-    : '📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.';
+  const camHint=$('cam-hint-txt');
+  const camOverlay=$('cam-hint-overlay');
+  const hintHe='📏 <b>טיפ:</b> לדיוק בגודל המנה, שים מטבע, מזלג או יד לצד האוכל לפני הצילום.';
+  const hintEn='📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.';
+  const overHe='📏 שים מטבע, מזלג או יד לצד האוכל לדיוק';
+  const overEn='📏 Place a coin, fork or hand next to food for accurate size';
+  if(ph) ph.innerHTML=lang==='he'?hintHe:hintEn;
+  if(camHint) camHint.innerHTML=lang==='he'?hintHe:hintEn;
+  if(camOverlay) camOverlay.textContent=lang==='he'?overHe:overEn;
   $s('fm-upload-l',tx.fmUpload); $s('fm-camera-l',tx.fmCamera); $s('fm-text-l',tx.fmText);
   $s('cam-snap-l',tx.fmSnapL); $s('f-txt-l',tx.fTxtL); $s('f-txt-btn-l',tx.fTxtBtn);
   const fti=$('f-text-inp'); if(fti)fti.placeholder=tx.fTxtPh;
