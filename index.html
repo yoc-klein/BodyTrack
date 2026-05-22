@@ -665,8 +665,9 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
         </div>
         <div class="r2">
           <div class="fld">
-            <label class="flbl" id="st-al">Age</label>
-            <input type="number" class="fi" id="s-age" placeholder="30" min="10" max="120">
+            <label class="flbl" id="st-al">Date of Birth</label>
+            <input type="date" class="fi" id="s-dob" onchange="updateAgeDisplay()">
+            <div id="s-age-display" style="font-size:12px;color:var(--text2);margin-top:5px;font-weight:600"></div>
           </div>
           <div class="fld">
             <label class="flbl" id="st-gl">Gender</label>
@@ -676,6 +677,16 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
               <option value="female" id="sg-f">Female</option>
             </select>
           </div>
+        </div>
+        <div class="fld">
+          <label class="flbl" id="st-act-l">Weekly Training Level</label>
+          <select class="fi" id="s-activity">
+            <option value="1.2"   id="sa-none">Sedentary (no exercise)</option>
+            <option value="1.375" id="sa-light">Light (1–2 days/week)</option>
+            <option value="1.55"  id="sa-mod" selected>Moderate (3–5 days/week)</option>
+            <option value="1.725" id="sa-heavy">Active (6–7 days/week)</option>
+            <option value="1.9"   id="sa-extreme">Very active (2x/day or hard labor)</option>
+          </select>
         </div>
         <div class="divx"></div>
         <div class="shd" id="st-ghd">WEIGHT GOAL</div>
@@ -784,7 +795,7 @@ en:{
   mgl2:'Weight Loss',mgm:'Maintenance',mgmu:'Muscle Gain',
   mpno:'No restrictions',mpvg:'Vegetarian',mpvn:'Vegan',mpgf:'Gluten-free',mpmd:'Mediterranean',
   stttl:'⚙️ Settings',stlhd:'LANGUAGE',stbhd:'BODY MEASUREMENTS',
-  sthl:'Height (cm)',stal:'Age',stgl:'Gender',sgsl:'Select',sgm:'Male',sgf:'Female',
+  sthl:'Height (cm)',stal:'Date of Birth',stgl:'Gender',sgsl:'Select',sgm:'Male',sgf:'Female',stActL:'Weekly Training Level',saNo:'Sedentary (no exercise)',saLight:'Light (1–2 days/week)',saMod:'Moderate (3–5 days/week)',saHeavy:'Active (6–7 days/week)',saEx:'Very active (2x/day)',
   stghd:'WEIGHT GOAL',stgwl:'Target weight (kg)',stgdl:'Target date',
   stcahd:'CALORIE GOAL',stcall:'Daily calorie goal',
   stsv:'Save Settings',stsaved:'Settings saved! ✅',stahd:'ACCOUNT',stlo:'Sign Out',
@@ -828,7 +839,7 @@ he:{
   mgl2:'ירידה במשקל',mgm:'שמירה על משקל',mgmu:'עלייה בשריר',
   mpno:'ללא הגבלה',mpvg:'צמחוני',mpvn:'טבעוני',mpgf:'ללא גלוטן',mpmd:'ים תיכוני',
   stttl:'⚙️ הגדרות',stlhd:'שפה',stbhd:'מידות גוף',
-  sthl:'גובה (ס"מ)',stal:'גיל',stgl:'מגדר',sgsl:'בחר',sgm:'זכר',sgf:'נקבה',
+  sthl:'גובה (ס"מ)',stal:'תאריך לידה',stgl:'מגדר',sgsl:'בחר',sgm:'זכר',sgf:'נקבה',stActL:'רמת פעילות שבועית',saNo:'יושבני (ללא אימון)',saLight:'קל (1–2 ימים/שבוע)',saMod:'מתון (3–5 ימים/שבוע)',saHeavy:'פעיל (6–7 ימים/שבוע)',saEx:'פעיל מאוד (2x/יום)',
   stghd:'יעד משקל',stgwl:'משקל יעד (ק"ג)',stgdl:'תאריך יעד',
   stcahd:'יעד קלוריות',stcall:'יעד קלוריות יומי',
   stsv:'שמור הגדרות',stsaved:'ההגדרות נשמרו! ✅',stahd:'חשבון',stlo:'התנתק',
@@ -910,6 +921,11 @@ function applyTX() {
   $s('st-ttl',tx.stttl); $s('st-lhd',tx.stlhd); $s('st-bhd',tx.stbhd);
   $s('st-hl',tx.sthl); $s('st-al',tx.stal); $s('st-gl',tx.stgl);
   $s('sg-sl',tx.sgsl); $s('sg-m',tx.sgm); $s('sg-f',tx.sgf);
+  $s('st-act-l',tx.stActL);
+  $s('sa-none',tx.saNo); $s('sa-light',tx.saLight); $s('sa-mod',tx.saMod);
+  $s('sa-heavy',tx.saHeavy); $s('sa-extreme',tx.saEx);
+  // Refresh age display when language changes
+  updateAgeDisplay();
   $s('st-ghd',tx.stghd); $s('st-gwl',tx.stgwl); $s('st-gdl',tx.stgdl);
   $s('st-cahd',tx.stcahd); $s('st-cal-l',tx.stcall);
   $s('st-sv',tx.stsv); $s('st-ahd',tx.stahd); $s('st-lo',tx.stlo);
@@ -944,8 +960,10 @@ async function loadSettings() {
     setts=data;
     if(setts.lang){ lang=setts.lang; setLang(lang); }
     if(setts.height) $('s-h').value=setts.height;
-    if(setts.age) $('s-age').value=setts.age;
+    if(setts.dob){ $('s-dob').value=setts.dob; updateAgeDisplay(); }
+    else if(setts.age){ /* legacy — show estimated DOB */ }
     if(setts.gender) $('s-gen').value=setts.gender;
+    if(setts.activity_factor) $('s-activity').value=setts.activity_factor;
     if(setts.goal_weight) $('s-gw').value=setts.goal_weight;
     if(setts.goal_date) $('s-gd').value=setts.goal_date;
     if(setts.daily_calorie_goal) $('s-cal').value=setts.daily_calorie_goal;
@@ -953,13 +971,20 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-  const h=parseFloat($('s-h').value), age=parseInt($('s-age').value),
-        gender=$('s-gen').value, gw=parseFloat($('s-gw').value),
-        gd=$('s-gd').value, cal=parseInt($('s-cal').value)||2000;
+  const h        = parseFloat($('s-h').value);
+  const dob      = $('s-dob').value;
+  const gender   = $('s-gen').value;
+  const activity = parseFloat($('s-activity').value) || 1.55;
+  const gw       = parseFloat($('s-gw').value);
+  const gd       = $('s-gd').value;
+  const cal      = parseInt($('s-cal').value) || 2000;
+  // Calculate age from DOB
+  const age = dob ? calcAgeFromDob(dob) : (setts.age || 35);
 
   const payload={
     user_id: user.id,
-    height: h||null, age: age||null, gender: gender||null,
+    height: h||null, age: age||null, dob: dob||null,
+    gender: gender||null, activity_factor: activity,
     goal_weight: gw||null, goal_date: gd||null,
     lang, daily_calorie_goal: cal,
     updated_at: new Date().toISOString()
@@ -1073,6 +1098,27 @@ async function deleteEntry(id) {
 // ═══════════════════════════════════════════
 // UPDATE ALL UI
 // ═══════════════════════════════════════════
+// ── AGE / DOB HELPERS ────────────────────────────────────────────────────
+function calcAgeFromDob(dob){
+  const birth = new Date(dob);
+  const now   = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if(m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function updateAgeDisplay(){
+  const dob = $('s-dob').value;
+  const disp = $('s-age-display');
+  if(!disp) return;
+  if(!dob){ disp.textContent=''; return; }
+  const age = calcAgeFromDob(dob);
+  const isHe = lang === 'he';
+  if(age < 5 || age > 120){ disp.textContent = isHe ? '⚠️ תאריך לא תקין' : '⚠️ Invalid date'; return; }
+  disp.textContent = isHe ? `גיל: ${age}` : `Age: ${age}`;
+}
+
 // ── CALORIE RECOMMENDATION ───────────────────────────────────────────────
 // Calculates daily calorie recommendation based on:
 // - Most recent weight entry
@@ -1096,16 +1142,17 @@ function calcCalorieRecommendation(){
   const totalKcalDiff = weightDiff * 7700;  // 1kg fat ≈ 7700 kcal
   const dailyAdjust   = totalKcalDiff / daysLeft; // kcal/day to cut or add
 
-  // Estimate BMR using simplified Mifflin-St Jeor
-  const age    = setts.age    || 35;
+  // Calculate age: prefer DOB, fall back to stored age, default 35
+  const age    = setts.dob ? calcAgeFromDob(setts.dob) : (setts.age || 35);
   const height = setts.height || 170;
   const isMale = (setts.gender === 'male');
-  // BMR kg/cm version
+  const actFactor = parseFloat(setts.activity_factor) || 1.55; // default: moderate
+  // Mifflin-St Jeor BMR
   const bmr = isMale
     ? (10 * currentWeight) + (6.25 * height) - (5 * age) + 5
     : (10 * currentWeight) + (6.25 * height) - (5 * age) - 161;
-  // Assume lightly active (factor 1.375)
-  const tdee = Math.round(bmr * 1.375);
+  // TDEE using user's actual activity level
+  const tdee = Math.round(bmr * actFactor);
   // Recommended daily intake
   let rec = Math.round(tdee - dailyAdjust);
   // Safety bounds: never below 1200, never above 4000
@@ -1143,9 +1190,18 @@ function applyCalorieRecommendation(){
     ? (isHe?'להוריד':'lose')
     : (isHe?'להעלות':'gain');
   const absKg = Math.abs(weightDiff).toFixed(1);
+  const actLabels = {
+    '1.2':   isHe?'יושבני':'Sedentary',
+    '1.375': isHe?'קל':'Light',
+    '1.55':  isHe?'מתון':'Moderate',
+    '1.725': isHe?'פעיל':'Active',
+    '1.9':   isHe?'פעיל מאוד':'Very active'
+  };
+  const actKey = String(parseFloat(setts.activity_factor)||1.55);
+  const actLabel = actLabels[actKey] || actLabels['1.55'];
   const detail = isHe
-    ? `${absKg} ק"ג ${loseGain} ב-${daysLeft} ימים · ${Math.abs(dailyAdjust)} קק"ל/יום הפרש`
-    : `${absKg} kg to ${loseGain} in ${daysLeft} days · ${Math.abs(dailyAdjust)} kcal/day diff`;
+    ? `${absKg} ק"ג ${loseGain} ב-${daysLeft} ימים · פעילות: ${actLabel} · ${Math.abs(dailyAdjust)} קק"ל/יום הפרש`
+    : `${absKg} kg to ${loseGain} in ${daysLeft} days · Activity: ${actLabel} · ${Math.abs(dailyAdjust)} kcal/day diff`;
 
   // ── Settings box ──
   if(recBox){
