@@ -479,21 +479,21 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 
           <!-- MODE: CAMERA -->
           <div id="fm-camera" style="display:none">
+            <!-- Blue hint shown ABOVE the camera so it's always visible -->
+            <div style="margin-bottom:10px;padding:9px 12px;border-radius:var(--r2);background:var(--bl);border:1px solid rgba(37,99,235,.2);font-size:12px;color:var(--blue);line-height:1.5">
+              <span id="cam-hint-txt">📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.</span>
+            </div>
             <div id="cam-wrap" style="position:relative;border-radius:var(--r2);overflow:hidden;background:#000;margin-bottom:10px">
               <video id="cam-video" style="width:100%;max-height:260px;display:block;object-fit:cover" autoplay playsinline muted></video>
               <div id="cam-countdown" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:64px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
-              <!-- Hint overlay shown on top of video feed -->
-              <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);padding:7px 10px;font-size:11px;color:#fff;line-height:1.4">
-                <span id="cam-hint-overlay">📏 Place a coin, fork or hand next to food for accurate size</span>
+              <!-- Small overlay reminder on video -->
+              <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:18px 10px 8px;font-size:11px;color:#fff;line-height:1.4;pointer-events:none">
+                <span id="cam-hint-overlay">📏 Place a reference object next to food</span>
               </div>
             </div>
             <div class="gap8">
               <button class="btn btn-g" id="cam-snap-btn" onclick="snapPhoto()"><span class="ico">📸</span><span id="cam-snap-l">Take Photo</span></button>
               <button class="btn btn-s btn-sm" onclick="stopCamera()"><span class="ico">✕</span></button>
-            </div>
-            <!-- Same blue hint below buttons -->
-            <div style="margin-top:10px;padding:9px 12px;border-radius:var(--r2);background:var(--bl);border:1px solid rgba(37,99,235,.2);font-size:12px;color:var(--blue);line-height:1.5">
-              <span id="cam-hint-txt">📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.</span>
             </div>
             <canvas id="cam-canvas" style="display:none"></canvas>
           </div>
