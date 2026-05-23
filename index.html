@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#16a34a">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BodyTrack">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>BodyTrack</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#f0f4f8;--card:#fff;--card2:#f7f9fc;--card3:#eef1f6;
+  --text:#111827;--text2:#6b7280;--text3:#9ca3af;
+  --green:#16a34a;--gl:rgba(22,163,74,.14);--gdk:#14532d;
+  --blue:#2563eb;--bl:rgba(37,99,235,.14);
+  --amber:#b45309;--al:rgba(180,83,9,.14);
+  --red:#dc2626;--rl:rgba(220,38,38,.14);
+  --purple:#7c3aed;--pl:rgba(124,58,237,.14);
+  --border:#e5e7eb;--border2:#d1d5db;
+  --r:14px;--r2:10px;--r3:6px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 20px rgba(0,0,0,.13);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0f1117;--card:#1a2235;--card2:#212d40;--card3:#283450;
+  --text:#e8edf5;--text2:#8892a4;--text3:#4b5568;
+  --border:#2a3a52;--border2:#3a4d6a;
+  --gl:rgba(22,163,74,.18);--bl:rgba(37,99,235,.18);--al:rgba(180,83,9,.18);--rl:rgba(220,38,38,.18);--pl:rgba(124,58,237,.18);
+  --sh:0 1px 3px rgba(0,0,0,.35);--sh2:0 4px 20px rgba(0,0,0,.55);
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.5;overscroll-behavior:none}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+
+/* PAGES */
+.pg{display:none;min-height:100vh;flex-direction:column}
+.pg.on{display:flex}
+
+/* SPLASH */
+#pg-splash{align-items:center;justify-content:center;background:linear-gradient(135deg,#0f2d16 0%,#16a34a 55%,#4ade80 100%)}
+.sp-wrap{text-align:center;color:#fff;padding:40px 24px}
+.sp-ico{font-size:80px;display:block;margin-bottom:16px;animation:bounce 1.2s ease infinite alternate}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+.sp-title{font-size:38px;font-weight:900;letter-spacing:-1.5px;margin-bottom:8px}
+.sp-sub{font-size:16px;opacity:.8;margin-bottom:52px}
+.sp-dots{display:flex;gap:10px;justify-content:center}
+.sp-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.4);animation:pdot 1.4s ease-in-out infinite}
+.sp-dot:nth-child(2){animation-delay:.2s}.sp-dot:nth-child(3){animation-delay:.4s}
+@keyframes pdot{0%,80%,100%{transform:scale(1);opacity:.4}40%{transform:scale(1.4);opacity:1}}
+
+/* LOGIN */
+#pg-login{align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.lc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:32px 24px;width:100%;max-width:360px;box-shadow:var(--sh2);text-align:center}
+.lc-ico{font-size:56px;display:block;margin-bottom:12px}
+.lc-title{font-size:24px;font-weight:900;margin-bottom:8px}
+.lc-sub{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.65}
+.g-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 20px;border-radius:var(--r2);background:var(--card);border:1.5px solid var(--border2);font-size:15px;font-weight:700;cursor:pointer;color:var(--text);transition:all .15s;box-shadow:var(--sh)}
+.g-btn:hover{border-color:var(--green);box-shadow:var(--sh2);transform:translateY(-1px)}
+.g-ico{width:22px;height:22px;flex-shrink:0}
+.lng-row{display:flex;gap:8px;margin-top:18px}
+.lng-btn{flex:1;padding:9px;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card2);color:var(--text2);transition:all .15s}
+.lng-btn.on{background:var(--green);color:#fff;border-color:var(--green)}
+.lc-note{font-size:11px;color:var(--text3);margin-top:16px;line-height:1.6}
+
+/* APP SHELL */
+#topbar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
+.tl{display:flex;align-items:center;gap:9px}
+.ldot{width:32px;height:32px;background:var(--green);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;flex-shrink:0}
+.lname{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.luser{font-size:11px;color:var(--text3);margin-top:-1px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr{display:flex;align-items:center;gap:7px}
+.streak{background:var(--al);color:var(--amber);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:3px}
+.ib{width:32px;height:32px;border-radius:8px;background:var(--card2);border:1px solid var(--border);cursor:pointer;color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.ib:hover{background:var(--card3)}
+#content{flex:1;padding:12px 12px 82px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#navbar{background:var(--card);border-top:1px solid var(--border);display:flex;position:sticky;bottom:0;z-index:100;box-shadow:0 -1px 4px rgba(0,0,0,.06)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:7px 0 9px;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:.3px;transition:color .15s;text-transform:uppercase}
+.nb .ico{font-size:21px;line-height:1}
+.nb.on{color:var(--green)}
+
+/* SCREENS */
+.scr{display:none;animation:fadeup .18s ease}
+.scr.on{display:block}
+@keyframes fadeup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:11px;box-shadow:var(--sh)}
+.ct{font-size:15px;font-weight:800;margin-bottom:3px}
+.cs{font-size:13px;color:var(--text2);margin-bottom:13px}
+
+/* STAT GRIDS */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px}
+.stat{background:var(--card2);border-radius:var(--r2);padding:13px;text-align:center;border:1px solid var(--border)}
+.sv{font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1}
+.sl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-top:5px}
+.ss{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* BMI BAR */
+.bmi-bar{height:10px;border-radius:5px;background:linear-gradient(to right,#60a5fa 0%,#34d399 28%,#fbbf24 62%,#f87171 100%);position:relative;margin:10px 0 4px}
+.bmi-pin{position:absolute;width:16px;height:16px;background:var(--card);border:2.5px solid var(--text);border-radius:50%;top:-3px;margin-left:-8px;transition:left .5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.bmi-ls{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-top:4px;font-weight:500}
+
+/* PROGRESS */
+.ptrk{background:var(--card2);border-radius:6px;height:8px;overflow:hidden;margin:8px 0;border:1px solid var(--border)}
+.pfil{height:100%;border-radius:6px;background:var(--green);transition:width .6s ease}
+
+/* CHANGE */
+.cg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cb{background:var(--card2);border-radius:var(--r2);padding:10px;text-align:center;border:1px solid var(--border)}
+.cv{font-size:14px;font-weight:800}
+.cl{font-size:10px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.2px}
+
+/* CHART */
+.chw{position:relative;width:100%;height:170px}
+.rr{display:flex;gap:5px}
+.rb{padding:5px 10px;border-radius:var(--r3);background:var(--card2);border:1px solid var(--border2);font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s}
+.rb.on{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* CALORIE RING */
+.cal-wrap{display:flex;align-items:center;gap:18px;padding:8px 0}
+.cal-ring{position:relative;width:108px;height:108px;flex-shrink:0}
+.cal-ring svg{transform:rotate(-90deg)}
+.crb{fill:none;stroke:var(--border2);stroke-width:10}
+.crf{fill:none;stroke:var(--green);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .6s ease;stroke-dasharray:301.6;stroke-dashoffset:301.6}
+.crt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.crn{font-size:20px;font-weight:900;line-height:1}
+.crl{font-size:10px;color:var(--text3);font-weight:600;margin-top:2px}
+.mac-list{flex:1}
+.mac-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.mac-lbl{font-size:11px;font-weight:600;min-width:52px;color:var(--text2)}
+.mac-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.mac-fill{height:100%;border-radius:3px;transition:width .5s}
+.mac-val{font-size:11px;color:var(--text2);min-width:33px;text-align:right}
+
+/* FORMS */
+.fld{margin-bottom:12px}
+.flbl{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.fi{width:100%;padding:11px 13px;border:1.5px solid var(--border2);border-radius:var(--r2);font-size:15px;background:var(--card);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
+.fi:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+.fi::placeholder{color:var(--text3)}
+textarea.fi{resize:none;min-height:68px}
+select.fi{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+html[dir=rtl] select.fi{background-position:left 12px center;padding-right:13px;padding-left:36px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:12px 16px;border-radius:var(--r2);font-size:14px;font-weight:700;border:none;cursor:pointer;width:100%;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.97)}
+.btn .ico{font-size:16px;flex-shrink:0}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{opacity:.9}
+.btn-s{background:var(--card2);color:var(--text);border:1.5px solid var(--border2)}.btn-s:hover{background:var(--card3)}
+.btn-b{background:var(--blue);color:#fff}.btn-b:hover{opacity:.9}
+.btn-p{background:var(--purple);color:#fff}.btn-p:hover{opacity:.9}
+.btn-d{background:var(--rl);color:var(--red);border:1.5px solid rgba(220,38,38,.3)}.btn-d:hover{opacity:.85}
+.btn-o{background:transparent;color:var(--green);border:1.5px solid var(--green)}.btn-o:hover{background:var(--gl)}
+.bico{width:34px;height:34px;padding:0;border-radius:var(--r2);background:var(--rl);color:var(--red);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:opacity .15s}
+.bico:hover{opacity:.75}
+.btn-sm{padding:7px 12px;font-size:12px;width:auto}
+.mt{margin-top:10px}
+.gap8{display:flex;gap:8px}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.bg{background:var(--gl);color:var(--green)}
+.bb{background:var(--bl);color:var(--blue)}
+.ba{background:var(--al);color:var(--amber)}
+.br{background:var(--rl);color:var(--red)}
+.bp{background:var(--pl);color:var(--purple)}
+
+/* HISTORY */
+.ent{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.ent:last-child{border-bottom:none}
+.edt{font-size:12px;color:var(--text3);min-width:44px}
+.ebd{flex:1}
+.ewt{font-size:16px;font-weight:800}
+
+/* DROPZONE */
+.dz{border:2px dashed var(--border2);border-radius:var(--r);padding:28px 16px;text-align:center;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.dz:hover{border-color:var(--green);background:var(--gl)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+/* FOOD CONFIRM */
+.cfbox{background:var(--gl);border:1px solid rgba(22,163,74,.25);border-radius:var(--r2);padding:14px;margin-top:12px}
+.mac-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.mb{background:var(--card);border-radius:var(--r3);padding:8px 4px;text-align:center;border:1px solid var(--border)}
+.mv{font-size:14px;font-weight:800;color:var(--green)}
+.mn{font-size:10px;color:var(--text3);margin-top:1px;font-weight:600}
+
+/* FOOD LOG LIST */
+.fl-item{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--border)}
+.fl-item:last-child{border-bottom:none}
+.fl-badge{padding:3px 8px;border-radius:var(--r3);font-size:11px;font-weight:700;white-space:nowrap}
+.fl-bd{flex:1}
+.fl-nm{font-size:14px;font-weight:600}
+.fl-cal{font-size:18px;font-weight:900;color:var(--green);flex-shrink:0}
+
+/* CHAT */
+.chat-outer{border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-top:11px}
+.chat-msgs{max-height:250px;overflow-y:auto;padding:11px;display:flex;flex-direction:column;gap:9px;background:var(--card2)}
+.msg{max-width:86%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5}
+.msg-ai{background:var(--card);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:3px}
+.msg-user{background:var(--green);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.chat-row{display:flex;border-top:1px solid var(--border)}
+.chat-inp{flex:1;padding:11px 13px;border:none;background:var(--card);color:var(--text);outline:none;font-size:14px}
+.chat-inp::placeholder{color:var(--text3)}
+.chat-send{padding:11px 16px;background:var(--green);color:#fff;border:none;cursor:pointer;font-size:18px;transition:opacity .15s}
+.chat-send:hover{opacity:.85}
+
+/* SAVED MENUS */
+.sm-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:12px;margin-bottom:9px;cursor:pointer;transition:all .15s}
+.sm-card:hover{border-color:var(--green);background:var(--gl)}
+.mday{background:var(--card2);border-radius:var(--r2);padding:11px;margin-bottom:7px;border:1px solid var(--border)}
+.mline{display:flex;gap:8px;margin-bottom:4px;font-size:13px;align-items:baseline}
+.mtype{color:var(--text3);min-width:62px;font-size:11px;font-weight:700;flex-shrink:0;text-transform:uppercase}
+.mname{flex:1;color:var(--text)}
+.mcal{color:var(--green);font-size:12px;font-weight:700;white-space:nowrap}
+
+/* SETTINGS */
+.shd{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px}
+.lt{display:flex;background:var(--card2);border-radius:var(--r2);padding:3px;gap:3px;border:1px solid var(--border)}
+.lo{flex:1;padding:9px;border:none;background:none;border-radius:var(--r3);font-size:14px;font-weight:600;cursor:pointer;color:var(--text3);transition:all .15s}
+.lo.on{background:var(--card);color:var(--text);box-shadow:var(--sh)}
+.divx{height:1px;background:var(--border);margin:14px 0}
+.uav{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--green)}
+.uavp{width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* LOADER */
+.ld{display:flex;align-items:center;gap:10px;padding:13px 0;color:var(--text2);font-size:14px}
+.spi{width:20px;height:20px;border:2.5px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.emp{text-align:center;padding:30px 16px}
+.emp .ei{font-size:42px;margin-bottom:10px;display:block;opacity:.3}
+.emp p{font-size:14px;color:var(--text3)}
+
+/* BMI PREVIEW */
+.bpv{background:var(--card2);border-radius:var(--r2);padding:11px;margin-top:9px;display:none;border:1px solid var(--border)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal-bg.hidden{display:none}
+.modal{background:var(--card);border-radius:var(--r) var(--r) 0 0;padding:20px;width:100%;max-width:430px;max-height:80vh;overflow-y:auto;animation:slideup .2s ease}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-hd{font-size:15px;font-weight:800;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);padding:2px}
+
+/* TOAST */
+#toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:var(--sh2)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* RTL */
+html[dir=rtl] .bmi-ls{flex-direction:row-reverse}
+html[dir=rtl] .mtype{text-align:right}
+html[dir=rtl] .msg-ai{align-self:flex-end;border-bottom-left-radius:12px;border-bottom-right-radius:3px}
+html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;border-bottom-left-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ═══ SPLASH ═══ -->
+<div id="pg-splash" class="pg on">
+  <div class="sp-wrap">
+    <span class="sp-ico">⚡</span>
+    <div class="sp-title">BodyTrack</div>
+    <div class="sp-sub">Your personal health companion</div>
+    <div class="sp-dots"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div></div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="pg-login" class="pg">
+  <div class="lc">
+    <span class="lc-ico">⚡</span>
+    <div class="lc-title" id="ln-title">Welcome to BodyTrack</div>
+    <div class="lc-sub" id="ln-sub">Track your weight, BMI, calories and diet — all in one place. Private & secure.</div>
+    <button class="g-btn" onclick="loginGoogle()">
+      <svg class="g-ico" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      <span id="ln-btn">Continue with Google</span>
+    </button>
+    <div class="lng-row">
+      <button class="lng-btn on" id="lb-en" onclick="setLang('en',true)">🇺🇸 English</button>
+      <button class="lng-btn" id="lb-he" onclick="setLang('he',true)">🇮🇱 עברית</button>
+    </div>
+    <div class="lc-note" id="ln-note">🔒 Secure Google Sign-In. No password needed. Only your health data is stored.</div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="pg-app" class="pg">
+  <div id="topbar">
+    <div class="tl">
+      <div class="ldot">⚡</div>
+      <div>
+        <div class="lname">BodyTrack</div>
+        <div class="luser" id="tp-user">–</div>
+      </div>
+    </div>
+    <div class="tr">
+      <div class="streak">🔥 <span id="sk-n">0</span><span id="sk-sfx">d</span></div>
+      <button class="ib" onclick="switchTab('settings')">⚙️</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div id="s-dash" class="scr on">
+      <div class="emp" id="d-emp" style="display:none">
+        <span class="ei">🏋️</span>
+        <p id="d-emp-txt">No entries yet. Log your first weight!</p>
+        <button class="btn btn-g mt" style="width:auto;padding:11px 26px" onclick="switchTab('add')">
+          <span class="ico">➕</span><span id="d-emp-btn">Log Now</span>
+        </button>
+      </div>
+      <div id="d-data">
+        <!-- Calorie ring -->
+        <div class="card" id="d-cal-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <span style="font-weight:800;font-size:14px" id="d-cal-ttl">Today's Calories</span>
+            <span style="font-size:12px;color:var(--text2)" id="d-cal-date"></span>
+          </div>
+          <div class="cal-wrap">
+            <div class="cal-ring">
+              <svg width="108" height="108" viewBox="0 0 108 108">
+                <circle class="crb" cx="54" cy="54" r="48"/>
+                <circle class="crf" id="crf" cx="54" cy="54" r="48"/>
+              </svg>
+              <div class="crt"><div class="crn" id="crn">0</div><div class="crl" id="crl">kcal</div></div>
+            </div>
+            <div class="mac-list">
+              <div class="mac-row"><div class="mac-lbl" id="ml-p">Protein</div><div class="mac-bar"><div class="mac-fill" id="mf-p" style="background:#16a34a;width:0%"></div></div><div class="mac-val" id="mv-p">0g</div></div>
+              <div class="mac-row"><div class="mac-lbl" id="ml-c">Carbs</div><div class="mac-bar"><div class="mac-fill" id="mf-c" style="background:#2563eb;width:0%"></div></div><div class="mac-val" id="mv-c">0g</div></div>
+              <div class="mac-row"><div class="mac-lbl" id="ml-f">Fat</div><div class="mac-bar"><div class="mac-fill" id="mf-f" style="background:#b45309;width:0%"></div></div><div class="mac-val" id="mv-f">0g</div></div>
+            </div>
+          </div>
+          <div id="d-meals-today"></div>
+        </div>
+        <!-- Weight & BMI -->
+        <div class="sg">
+          <div class="stat"><div class="sv" id="d-wt">–</div><div class="sl" id="d-wt-l">WEIGHT</div><div class="ss" id="d-wt-unit">kg</div></div>
+          <div class="stat"><div class="sv" id="d-bmi">–</div><div class="sl" id="d-bmi-l">BMI</div><div class="ss" id="d-bmi-c">–</div></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-weight:700;font-size:14px" id="d-sc-l">BMI Scale</span>
+            <span class="badge bg" id="d-bdg">–</span>
+          </div>
+          <div class="bmi-bar"><div class="bmi-pin" id="bmi-pin" style="left:30%"></div></div>
+          <div class="bmi-ls"><span id="bl-u">Under</span><span id="bl-n">Normal</span><span id="bl-o">Over</span><span id="bl-ob">Obese</span></div>
+        </div>
+        <div class="card" id="gc" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-weight:700;font-size:14px" id="d-g-l">Goal Progress</span>
+            <span style="font-size:14px;font-weight:800;color:var(--green)" id="g-pct">0%</span>
+          </div>
+          <div class="ptrk"><div class="pfil" id="g-fill" style="width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px">
+            <span><span id="gs-l">Start</span>: <b id="gs">–</b> <span id="g-kg-1">kg</span></span>
+            <span><span id="gt-l">Target</span>: <b id="gt">–</b> <span id="g-kg-2">kg</span></span>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <span style="font-weight:700;font-size:14px" id="d-c-l">Weight Chart</span>
+            <div class="rr">
+              <button class="rb" id="r7" onclick="setRange(7)">7d</button>
+              <button class="rb on" id="r30" onclick="setRange(30)">30d</button>
+              <button class="rb" id="r90" onclick="setRange(90)">3m</button>
+              <button class="rb" id="r180" onclick="setRange(180)">6m</button>
+              <button class="rb" id="r365" onclick="setRange(365)">1y</button>
+              <button class="rb" id="rA" onclick="setRange(0)">All</button>
+            </div>
+          </div>
+          <div class="chw"><canvas id="wChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div style="font-weight:700;font-size:14px;margin-bottom:9px" id="d-ch-l">Change</div>
+          <div class="cg">
+            <div class="cb"><div class="cv" id="cw">–</div><div class="cl" id="cw-l">7 DAYS</div></div>
+            <div class="cb"><div class="cv" id="cm">–</div><div class="cl" id="cm-l">30 DAYS</div></div>
+            <div class="cb"><div class="cv" id="ct">–</div><div class="cl" id="ct-l">TOTAL</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD WEIGHT -->
+    <div id="s-add" class="scr">
+      <div class="card">
+        <div class="ct" id="a-ttl">➕ Add Entry</div>
+        <div class="cs" id="a-sub">Record today's weight</div>
+        <div class="fld">
+          <label class="flbl" id="a-wl">Weight (kg)</label>
+          <input type="number" class="fi" id="a-w" placeholder="e.g. 75.5" step="0.1" min="20" max="300">
+        </div>
+        <div class="fld">
+          <label class="flbl" id="a-dl">Date</label>
+          <input type="date" class="fi" id="a-d">
+        </div>
+        <div class="fld">
+          <label class="flbl" id="a-nl">Note (optional)</label>
+          <textarea class="fi" id="a-n" placeholder="How do you feel today?"></textarea>
+        </div>
+        <div class="bpv" id="bpv">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px" id="bpv-l">BMI Preview</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px;font-weight:900" id="bpv-v">–</span>
+            <span class="badge bg" id="bpv-b">–</span>
+          </div>
+        </div>
+        <button class="btn btn-g mt" onclick="logEntry()" id="a-save-btn">
+          <span class="ico">✅</span><span id="a-btn">Add Entry</span>
+        </button>
+      </div>
+      <div class="card" style="background:var(--bl);border-color:rgba(37,99,235,.2)">
+        <div style="font-size:13px;color:var(--blue);font-weight:600" id="a-hint">💡 Set your height in Settings so BMI is calculated automatically.</div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="s-history" class="scr">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+          <span style="font-size:15px;font-weight:800" id="h-ttl">History</span>
+          <button class="btn btn-s btn-sm" onclick="exportCSV()"><span class="ico">💾</span><span id="h-exp">Export</span></button>
+        </div>
+        <div id="h-list"></div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700;font-size:14px;margin-bottom:9px" id="h-bmi-l">BMI Over Time</div>
+        <div class="chw"><canvas id="bChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="font-weight:700;font-size:14px;margin-bottom:9px" id="h-cal-l">Calories Per Day</div>
+        <div class="chw"><canvas id="calChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- AI FOOD -->
+    <div id="s-food" class="scr">
+      <div class="gap8" style="margin-bottom:11px">
+        <button class="btn btn-g btn-sm" id="ft-btn-a" onclick="showFoodTab('a')" style="flex:1"><span class="ico">📷</span><span id="ft-la">Analyzer</span></button>
+        <button class="btn btn-s btn-sm" id="ft-btn-l" onclick="showFoodTab('l')" style="flex:1"><span class="ico">📋</span><span id="ft-ll">Food Log</span></button>
+        <button class="btn btn-s btn-sm" id="ft-btn-m" onclick="showFoodTab('m')" style="flex:1"><span class="ico">📅</span><span id="ft-lm">Menu</span></button>
+      </div>
+
+      <!-- ANALYZER PANEL -->
+      <div id="fp-a">
+        <div class="card">
+          <div class="ct" id="f-ttl">🍽️ Food Analyzer</div>
+          <div class="cs" id="f-sub">3 ways to analyze your food</div>
+
+          <!-- MODE SELECTOR -->
+          <div style="display:flex;gap:6px;margin-bottom:14px">
+            <button class="btn btn-g btn-sm" id="fm-btn-upload" onclick="setFoodMode('upload')" style="flex:1"><span class="ico">📁</span><span id="fm-upload-l">Upload</span></button>
+            <button class="btn btn-s btn-sm" id="fm-btn-camera" onclick="setFoodMode('camera')" style="flex:1"><span class="ico">📸</span><span id="fm-camera-l">Camera</span></button>
+            <button class="btn btn-s btn-sm" id="fm-btn-text" onclick="setFoodMode('text')" style="flex:1"><span class="ico">✏️</span><span id="fm-text-l">Text</span></button>
+          </div>
+
+          <!-- MODE: UPLOAD -->
+          <div id="fm-upload">
+            <div id="dz" class="dz">
+              <input type="file" id="f-inp" accept="image/*" onchange="handleFoodImg(event)">
+              <div style="font-size:38px;margin-bottom:9px">📁</div>
+              <div style="font-size:14px;font-weight:600" id="f-tap">Tap to upload food photo</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:3px">JPEG · PNG · WEBP</div>
+            </div>
+            <div id="portion-hint" style="margin-top:10px;padding:9px 12px;border-radius:var(--r2);background:var(--bl);border:1px solid rgba(37,99,235,.2);font-size:12px;color:var(--blue);line-height:1.5">
+              <span id="portion-hint-txt">📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.</span>
+            </div>
+          </div>
+
+          <!-- MODE: CAMERA -->
+          <div id="fm-camera" style="display:none">
+            <!-- Blue hint shown ABOVE the camera so it's always visible -->
+            <div style="margin-bottom:10px;padding:9px 12px;border-radius:var(--r2);background:var(--bl);border:1px solid rgba(37,99,235,.2);font-size:12px;color:var(--blue);line-height:1.5">
+              <span id="cam-hint-txt">📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.</span>
+            </div>
+            <div id="cam-wrap" style="position:relative;border-radius:var(--r2);overflow:hidden;background:#000;margin-bottom:10px">
+              <video id="cam-video" style="width:100%;max-height:260px;display:block;object-fit:cover" autoplay playsinline muted></video>
+              <div id="cam-countdown" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:64px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)"></div>
+              <!-- Small overlay reminder on video -->
+              <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:18px 10px 8px;font-size:11px;color:#fff;line-height:1.4;pointer-events:none">
+                <span id="cam-hint-overlay">📏 Place a reference object next to food</span>
+              </div>
+            </div>
+            <div class="gap8">
+              <button class="btn btn-g" id="cam-snap-btn" onclick="snapPhoto()"><span class="ico">📸</span><span id="cam-snap-l">Take Photo</span></button>
+              <button class="btn btn-s btn-sm" onclick="stopCamera()"><span class="ico">✕</span></button>
+            </div>
+            <canvas id="cam-canvas" style="display:none"></canvas>
+          </div>
+
+          <!-- MODE: TEXT -->
+          <div id="fm-text" style="display:none">
+            <div class="fld">
+              <label class="flbl" id="f-txt-l">Describe what you ate</label>
+              <textarea class="fi" id="f-text-inp" rows="3" placeholder="e.g. I ate 2 scrambled eggs with toast and a cup of coffee with milk"></textarea>
+            </div>
+            <button class="btn btn-g" onclick="analyzeText()"><span class="ico">🔍</span><span id="f-txt-btn-l">Analyze with AI</span></button>
+          </div>
+
+          <!-- SHARED: image preview (upload + camera) -->
+          <div id="f-pw" style="display:none;margin-top:12px">
+            <img id="f-pi" style="width:100%;border-radius:var(--r2);max-height:200px;object-fit:cover;display:block;margin-bottom:12px" src="" alt="">
+            <button class="btn btn-g" onclick="analyzeFood()"><span class="ico">🔍</span><span id="f-an-l">Analyze with AI</span></button>
+            <button class="btn btn-s mt" onclick="resetFood()"><span class="ico">🔄</span><span id="f-rs-l">Choose different photo</span></button>
+          </div>
+
+          <div id="f-ld" class="ld" style="display:none"><div class="spi"></div><span id="f-ld-l">Analyzing with AI...</span></div>
+
+          <!-- CONFIRM STEP (shared by all 3 modes) -->
+          <div id="f-cf" style="display:none;margin-top:12px">
+            <div id="lc-warning" style="display:none;margin-bottom:10px;padding:10px 12px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.3);font-size:12px;color:var(--amber);font-weight:600;line-height:1.5"></div>
+            <div class="cfbox" id="f-cfbox"></div>
+            <div class="fld mt">
+              <label class="flbl" id="f-dsh-l">Dish name (edit if needed)</label>
+              <input type="text" class="fi" id="f-dsh">
+            </div>
+            <div class="r2">
+              <div class="fld">
+                <label class="flbl" id="f-mt-l">Meal type</label>
+                <select class="fi" id="f-mt">
+                  <option value="Breakfast" id="fmt-b">Breakfast</option>
+                  <option value="Lunch" id="fmt-l">Lunch</option>
+                  <option value="Dinner" id="fmt-d">Dinner</option>
+                  <option value="Snack" id="fmt-s">Snack</option>
+                </select>
+              </div>
+              <div class="fld">
+                <label class="flbl" id="f-dt-l">Date</label>
+                <input type="date" class="fi" id="f-dt">
+              </div>
+            </div>
+            <div class="gap8">
+              <button class="btn btn-g" onclick="confirmFoodLog()"><span class="ico">✅</span><span id="f-cf-l">Yes, I ate this!</span></button>
+              <button class="btn btn-d btn-sm" onclick="resetFood()"><span class="ico">❌</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOD LOG PANEL -->
+      <div id="fp-l" style="display:none">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+            <span style="font-size:15px;font-weight:800" id="fl-ttl">Food Log</span>
+            <input type="date" class="fi" id="fl-dt" style="width:auto;padding:6px 10px;font-size:12px" onchange="loadFoodLog()">
+          </div>
+          <div id="fl-sum" style="display:none;background:var(--gl);border-radius:var(--r2);padding:11px;margin-bottom:11px;border:1px solid rgba(22,163,74,.2)">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:13px;font-weight:700;color:var(--green)" id="fl-sum-l">Total today</span>
+              <span style="font-size:20px;font-weight:900;color:var(--green)" id="fl-total">0</span> <span id="fl-kcal-lbl" style="font-size:13px;font-weight:600;color:var(--green)">kcal</span>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:5px;font-size:12px;color:var(--gdk)">
+              <span id="fl-p">P: 0g</span> · <span id="fl-c">C: 0g</span> · <span id="fl-f">F: 0g</span>
+            </div>
+          </div>
+          <div id="fl-list"></div>
+        </div>
+      </div>
+
+      <!-- MENU PANEL -->
+      <div id="fp-m" style="display:none">
+        <div class="card">
+          <div class="ct" id="m-ttl">📅 Weekly Menu</div>
+          <div class="cs" id="m-sub">Generate and refine your meal plan with AI</div>
+          <div class="fld">
+            <label class="flbl" id="m-gl">Goal</label>
+            <select class="fi" id="m-g">
+              <option value="weight loss" id="mg-l">Weight Loss</option>
+              <option value="maintenance" id="mg-m">Maintenance</option>
+              <option value="muscle gain" id="mg-mu">Muscle Gain</option>
+            </select>
+          </div>
+          <div class="r2">
+            <div class="fld">
+              <label class="flbl" id="m-cl">Calories/day</label>
+              <input type="number" class="fi" id="m-c" placeholder="1800" step="50" min="1000" max="5000">
+              <div id="m-cal-rec-box" style="display:none;margin-top:6px;padding:8px 11px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.25)">
+                <div style="font-size:11px;color:var(--amber);font-weight:700" id="m-cal-rec-txt"></div>
+              </div>
+            </div>
+            <div class="fld">
+              <label class="flbl" id="m-dl">Diet type</label>
+              <select class="fi" id="m-p">
+                <option value="no restrictions" id="mp-no">No restrictions</option>
+                <option value="vegetarian" id="mp-vg">Vegetarian</option>
+                <option value="vegan" id="mp-vn">Vegan</option>
+                <option value="gluten-free" id="mp-gf">Gluten-free</option>
+                <option value="Mediterranean" id="mp-md">Mediterranean</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-g mt" onclick="generateMenu()"><span class="ico">✨</span><span id="m-btn">Generate Menu</span></button>
+          <div id="m-ld" class="ld" style="display:none"><div class="spi"></div><span id="m-ld-l">Generating menu...</span></div>
+
+          <!-- CHAT -->
+          <div id="m-chat" style="display:none;margin-top:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px" id="m-chat-hd">Refine your menu</div>
+            <div class="chat-outer">
+              <div class="chat-msgs" id="chat-msgs"></div>
+              <div class="chat-row">
+                <input class="chat-inp" id="chat-inp" placeholder="e.g. Replace chicken with fish..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}">
+                <button class="chat-send" onclick="sendChat()">➤</button>
+              </div>
+            </div>
+            <div id="m-chat-ld" class="ld" style="display:none"><div class="spi"></div><span id="m-chat-ld-l">Updating menu...</span></div>
+          </div>
+
+          <!-- MENU DISPLAY -->
+          <div id="m-disp" style="display:none;margin-top:11px"></div>
+
+          <!-- SAVE ROW -->
+          <div id="m-save-row" style="display:none;margin-top:10px">
+            <div class="r2">
+              <div class="fld">
+                <label class="flbl" id="m-nm-l">Menu name</label>
+                <input type="text" class="fi" id="m-nm" placeholder="e.g. Week 1">
+              </div>
+              <button class="btn btn-p" style="margin-top:auto;margin-bottom:12px" onclick="saveMenu()">
+                <span class="ico">💾</span><span id="m-sv-l">Save</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAVED MENUS -->
+        <div class="card">
+          <div style="font-size:15px;font-weight:800;margin-bottom:11px" id="sm-ttl">💾 Saved Menus</div>
+          <div id="sm-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="s-settings" class="scr">
+      <!-- Welcome banner shown only when no settings saved yet -->
+      <div id="sett-welcome" style="display:none;margin-bottom:12px;padding:16px;border-radius:var(--r);background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;box-shadow:var(--sh2)">
+        <div style="font-size:20px;margin-bottom:6px">👋</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:4px" id="sw-title">Welcome to BodyTrack!</div>
+        <div style="font-size:13px;opacity:.9;line-height:1.6" id="sw-body">To start tracking, please fill in your details below. Your height is required to calculate BMI, and your goal will help us recommend the right daily calories for you.</div>
+      </div>
+      <div class="card">
+        <div class="ct" id="st-ttl">⚙️ Settings</div>
+        <div style="display:flex;align-items:center;gap:12px;margin:12px 0 4px">
+          <div id="st-av"></div>
+          <div>
+            <div style="font-size:15px;font-weight:700" id="st-nm">–</div>
+            <div style="font-size:12px;color:var(--text3)" id="st-em">–</div>
+          </div>
+        </div>
+        <div class="divx"></div>
+        <div class="shd" id="st-lhd">LANGUAGE</div>
+        <div class="lt">
+          <button class="lo on" id="lng-en" onclick="setLang('en')">🇺🇸 English</button>
+          <button class="lo" id="lng-he" onclick="setLang('he')">🇮🇱 עברית</button>
+        </div>
+        <div class="divx"></div>
+        <div class="shd" id="st-bhd">BODY MEASUREMENTS</div>
+        <div class="fld">
+          <label class="flbl" id="st-hl">Height (cm)</label>
+          <input type="number" class="fi" id="s-h" placeholder="e.g. 175" step="1" min="100" max="250">
+        </div>
+        <div class="r2">
+          <div class="fld">
+            <label class="flbl" id="st-al">Date of Birth</label>
+            <input type="date" class="fi" id="s-dob" onchange="updateAgeDisplay()">
+            <div id="s-age-display" style="font-size:12px;color:var(--text2);margin-top:5px;font-weight:600"></div>
+          </div>
+          <div class="fld">
+            <label class="flbl" id="st-gl">Gender</label>
+            <select class="fi" id="s-gen">
+              <option value="" id="sg-sl">Select</option>
+              <option value="male" id="sg-m">Male</option>
+              <option value="female" id="sg-f">Female</option>
+            </select>
+          </div>
+        </div>
+        <div class="fld">
+          <label class="flbl" id="st-act-l">Weekly Training Level</label>
+          <select class="fi" id="s-activity">
+            <option value="1.2"   id="sa-none">Sedentary (no exercise)</option>
+            <option value="1.375" id="sa-light">Light (1–2 days/week)</option>
+            <option value="1.55"  id="sa-mod" selected>Moderate (3–5 days/week)</option>
+            <option value="1.725" id="sa-heavy">Active (6–7 days/week)</option>
+            <option value="1.9"   id="sa-extreme">Very active (2x/day or hard labor)</option>
+          </select>
+        </div>
+        <div class="divx"></div>
+        <div class="shd" id="st-ghd">WEIGHT GOAL</div>
+        <div class="r2">
+          <div class="fld">
+            <label class="flbl" id="st-gwl">Target weight (kg)</label>
+            <input type="number" class="fi" id="s-gw" placeholder="e.g. 70" step="0.5" min="20" max="300">
+          </div>
+          <div class="fld">
+            <label class="flbl" id="st-gdl">Target date</label>
+            <input type="date" class="fi" id="s-gd">
+          </div>
+        </div>
+        <div class="divx"></div>
+        <div class="shd" id="st-cahd">CALORIE GOAL</div>
+        <div class="fld">
+          <label class="flbl" id="st-cal-l">Daily calorie goal</label>
+          <input type="number" class="fi" id="s-cal" placeholder="2000" step="50" min="1000" max="5000">
+          <div id="cal-rec-box" style="display:none;margin-top:8px;padding:10px 13px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.25)">
+            <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px" id="cal-rec-label">Recommended for your goal</div>
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-size:22px;font-weight:800;color:var(--amber)" id="cal-rec-val">–</span>
+              <span style="font-size:13px;color:var(--amber)" id="cal-rec-kcal">kcal/day</span>
+            </div>
+            <div style="font-size:12px;color:var(--amber);margin-top:3px;opacity:.85" id="cal-rec-detail"></div>
+          </div>
+        </div>
+        <div class="divx"></div>
+        <button class="btn btn-g" onclick="saveSettings()"><span class="ico">💾</span><span id="st-sv">Save Settings</span></button>
+        <div class="divx"></div>
+        <div class="shd" id="st-ahd">ACCOUNT</div>
+        <button class="btn btn-d" onclick="doLogout()"><span class="ico">🚪</span><span id="st-lo">Sign Out</span></button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <nav id="navbar">
+    <button class="nb on" id="nb-dash" onclick="switchTab('dash')"><span class="ico">🏠</span><span id="n-dash">Dashboard</span></button>
+    <button class="nb" id="nb-add" onclick="switchTab('add')"><span class="ico">➕</span><span id="n-add">Add</span></button>
+    <button class="nb" id="nb-history" onclick="switchTab('history')"><span class="ico">📋</span><span id="n-hist">History</span></button>
+    <button class="nb" id="nb-food" onclick="switchTab('food')"><span class="ico">🥗</span><span id="n-food">AI Food</span></button>
+    <button class="nb" id="nb-settings" onclick="switchTab('settings')"><span class="ico">⚙️</span><span id="n-sett">Settings</span></button>
+  </nav>
+</div><!-- /pg-app -->
+
+<!-- MODAL -->
+<div class="modal-bg hidden" id="mbg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hd"><span id="m-hd-txt"></span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div id="m-hd-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG — your keys
+// ═══════════════════════════════════════════
+const SB_URL  = 'https://pmkyzsoxjphnopspnvjf.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBta3l6c294anBobm9wc3BudmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODg2NDYsImV4cCI6MjA5NDY2NDY0Nn0.MMYA4_l4vImFeZbbgXnQhONQaFTrncADwmIyRRZBkz8';
+// ── Gemini is called via Cloudflare Worker proxy (key is secret in Worker env) ──
+const GM_PROXY = 'https://gemini-proxy.yoc-klein.workers.dev';
+
+const sb = supabase.createClient(SB_URL, SB_ANON);
+
+// ═══════════════════════════════════════════
+// TRANSLATIONS
+// ═══════════════════════════════════════════
+const TX = {
+en:{
+  lnTitle:'Welcome to BodyTrack',lnSub:'Track weight, BMI, calories and diet — private & secure.',
+  lnBtn:'Continue with Google',lnNote:'🔒 Secure Google Sign-In. No password needed.',
+  sksfx:'d',
+  nd:'Dashboard',nadd:'Add Weight',nhist:'History',nfood:'AI Food',nsett:'Settings',
+  demptxt:'No entries yet. Log your first weight!',dempbtn:'Log Now',
+  dwtl:'WEIGHT',dbmil:'BMI',dscl:'BMI Scale',dCalTtl:"Today's Calories",
+  blu:'Under',bln:'Normal',blo:'Over',blob:'Obese',
+  dgl:'Goal Progress',gsl:'Start',gtl:'Target',dcl:'Weight Chart',dchl:'Change',
+  cwl:'7 DAYS',cml:'30 DAYS',ctl:'TOTAL',
+  cats:['Underweight','Healthy','Overweight','Obese'],
+  attl:'➕ Add Weight Measurement',asub:"Record your weight measurement",awl:'Weight (kg)',adl:'Date',anl:'Note (optional)',
+  anph:'How do you feel today?',bpvl:'BMI Preview',abtn:'Add Weight Measurement',
+  aok:'Entry logged! 💪',ahint:'💡 Set your height in Settings so BMI is calculated automatically.',
+  httl:'History',hexp:'Export',hbmil:'BMI Over Time',hcall:'Calories Per Day',hdel:'Entry deleted',
+  ftla:'Analyzer',ftll:'Food Log',ftlm:'Menu',
+  fttl:'🍽️ Food Analyzer',fsub:'3 ways to analyze your food',
+  fmUpload:'Upload',fmCamera:'Camera',fmText:'Text',
+  fmSnapL:'Take Photo',
+  fTxtL:'Describe what you ate',fTxtBtn:'Analyze with AI',
+  fTxtPh:'e.g. 2 scrambled eggs with toast and coffee',
+  ftap:'Tap to upload food photo',fanl:'Analyze with AI',frsl:'Choose different photo',
+  fldl:'Analyzing with AI...',ffail:'Analysis failed. Please try again.',
+  fdshL:'Dish name (edit if needed)',fmtL:'Meal type',fdtL:'Date',
+  fcfl:'Yes, I ate this!',fsaved:'Food logged! 🥗',
+  fmtB:'Breakfast',fmtL2:'Lunch',fmtD:'Dinner',fmtS:'Snack',
+  flTtl:'Food Log',flSumL:'Total today',
+  macP:'Protein',macC:'Carbs',macF:'Fat',macFib:'Fiber',kcal:'kcal',
+  mttl:'📅 Weekly Menu',msub:'Generate and refine your meal plan with AI',
+  mgl:'Goal',mcl:'Calories/day',mdl:'Diet type',mbtn:'Generate Menu',
+  mldl:'Generating menu...',mfail:'Menu generation failed.',
+  mChatHd:'Refine your menu',mChatPh:'e.g. Replace chicken with fish...',
+  mChatLdl:'Updating menu...',
+  mnml:'Menu name',msvl:'Save',msaved:'Menu saved! 💾',smTtl:'💾 Saved Menus',smEmpty:'No saved menus yet.',
+  mgl2:'Weight Loss',mgm:'Maintenance',mgmu:'Muscle Gain',
+  mpno:'No restrictions',mpvg:'Vegetarian',mpvn:'Vegan',mpgf:'Gluten-free',mpmd:'Mediterranean',
+  stttl:'⚙️ Settings',stlhd:'LANGUAGE',
+  swTitle:'Welcome to BodyTrack!',swBody:'To start tracking, please fill in your details below. Your height is required to calculate BMI, and your goal will help us recommend the right daily calories for you.',stbhd:'BODY MEASUREMENTS',
+  sthl:'Height (cm)',stal:'Date of Birth',stgl:'Gender',sgsl:'Select',sgm:'Male',sgf:'Female',stActL:'Weekly Training Level',saNo:'Sedentary (no exercise)',saLight:'Light (1–2 days/week)',saMod:'Moderate (3–5 days/week)',saHeavy:'Active (6–7 days/week)',saEx:'Very active (2x/day)',
+  stghd:'WEIGHT GOAL',stgwl:'Target weight (kg)',stgdl:'Target date',
+  stcahd:'CALORIE GOAL',stcall:'Daily calorie goal',
+  stsv:'Save Settings',stsaved:'Settings saved! ✅',stahd:'ACCOUNT',stlo:'Sign Out',
+  kgUnit:'kg',kcalUnit:'kcal',kcalDay:'kcal/day',gUnit:'g',pShort:'P',cShort:'C',fShort:'F',
+  noht:'Set your height in Settings first.',nodata:'No data to export',exported:'Exported! 📁',
+  wtbad:'Enter a valid weight (20–300 kg)',saving:'Saving...'
+},
+he:{
+  lnTitle:'ברוך הבא ל-BodyTrack',lnSub:'עקוב אחר משקל, BMI, קלוריות ותזונה — פרטי ומאובטח.',
+  lnBtn:'המשך עם Google',lnNote:'🔒 התחברות מאובטחת דרך Google. ללא סיסמה.',
+  sksfx:'י',
+  nd:'לוח ראשי',nadd:'הוסף משקל',nhist:'היסטוריה',nfood:'AI אוכל',nsett:'הגדרות',
+  demptxt:'אין רשומות עדיין. תרשום את המשקל הראשון שלך!',dempbtn:'הוסף עכשיו',
+  dwtl:'משקל',dbmil:'BMI',dscl:'סולם BMI',dCalTtl:'קלוריות היום',
+  blu:'תת-משקל',bln:'תקין',blo:'עודף',blob:'השמנה',
+  dgl:'התקדמות למטרה',gsl:'התחלה',gtl:'יעד',dcl:'גרף משקל',dchl:'שינוי',
+  cwl:'7 ימים',cml:'30 ימים',ctl:'סה"כ',
+  cats:['תת-משקל','תקין','עודף משקל','השמנה'],
+  attl:'➕ הוסף מדידת משקל',asub:'תעד את מדידת המשקל שלך היום',awl:'משקל (ק"ג)',adl:'תאריך',anl:'הערה (אופציונלי)',
+  anph:'איך אתה מרגיש היום?',bpvl:'תצוגה מקדימה BMI',abtn:'הוסף מדידה',
+  aok:'הרשומה נשמרה! 💪',ahint:'💡 הגדר גובה בהגדרות כדי לחשב BMI אוטומטית.',
+  httl:'היסטוריה',hexp:'ייצוא',hbmil:'BMI לאורך זמן',hcall:'קלוריות ליום',hdel:'הרשומה נמחקה',
+  ftla:'ניתוח',ftll:'יומן אוכל',ftlm:'תפריט',
+  fttl:'🍽️ ניתוח אוכל',fsub:'3 דרכים לנתח את האוכל שלך',
+  fmUpload:'העלה',fmCamera:'מצלמה',fmText:'טקסט',
+  fmSnapL:'צלם תמונה',
+  fTxtL:'תאר מה אכלת',fTxtBtn:'נתח עם AI',
+  fTxtPh:'לדוגמה: 2 ביצים מקושקשות עם לחם וקפה',
+  ftap:'לחץ להעלאת תמונת אוכל',fanl:'נתח עם AI',frsl:'בחר תמונה אחרת',
+  fldl:'מנתח עם AI...',ffail:'הניתוח נכשל. נסה שוב.',
+  fdshL:'שם המנה (ערוך אם נדרש)',fmtL:'סוג ארוחה',fdtL:'תאריך',
+  fcfl:'כן, אכלתי את זה!',fsaved:'הארוחה נשמרה! 🥗',
+  fmtB:'ארוחת בוקר',fmtL2:'ארוחת צהריים',fmtD:'ארוחת ערב',fmtS:'חטיף',
+  flTtl:'יומן אוכל',flSumL:'סה"כ היום',
+  macP:'חלבון',macC:'פחמימות',macF:'שומן',macFib:'סיבים',kcal:'קלוריות',
+  mttl:'📅 תפריט שבועי',msub:'צור ושפר את תוכנית הארוחות שלך עם AI',
+  mgl:'מטרה',mcl:'קלוריות/יום',mdl:'סוג דיאטה',mbtn:'צור תפריט',
+  mldl:'מייצר תפריט...',mfail:'יצירת התפריט נכשלה.',
+  mChatHd:'שפר את התפריט',mChatPh:'לדוגמה: החלף עוף בדג...',
+  mChatLdl:'מעדכן תפריט...',
+  mnml:'שם התפריט',msvl:'שמור',msaved:'התפריט נשמר! 💾',smTtl:'💾 תפריטים שמורים',smEmpty:'אין תפריטים שמורים עדיין.',
+  mgl2:'ירידה במשקל',mgm:'שמירה על משקל',mgmu:'עלייה בשריר',
+  mpno:'ללא הגבלה',mpvg:'צמחוני',mpvn:'טבעוני',mpgf:'ללא גלוטן',mpmd:'ים תיכוני',
+  stttl:'⚙️ הגדרות',stlhd:'שפה',
+  swTitle:'ברוך הבא ל-BodyTrack!',swBody:'כדי להתחיל לעקוב, אנא מלא את הפרטים שלך למטה. הגובה שלך נדרש לחישוב BMI, והיעד שלך יעזור לנו להמליץ על כמות הקלוריות היומית המתאימה לך.',stbhd:'מידות גוף',
+  sthl:'גובה (ס"מ)',stal:'תאריך לידה',stgl:'מגדר',sgsl:'בחר',sgm:'זכר',sgf:'נקבה',stActL:'רמת פעילות שבועית',saNo:'יושבני (ללא אימון)',saLight:'קל (1–2 ימים/שבוע)',saMod:'מתון (3–5 ימים/שבוע)',saHeavy:'פעיל (6–7 ימים/שבוע)',saEx:'פעיל מאוד (2x/יום)',
+  stghd:'יעד משקל',stgwl:'משקל יעד (ק"ג)',stgdl:'תאריך יעד',
+  stcahd:'יעד קלוריות',stcall:'יעד קלוריות יומי',
+  stsv:'שמור הגדרות',stsaved:'ההגדרות נשמרו! ✅',stahd:'חשבון',stlo:'התנתק',
+  kgUnit:'ק"ג',kcalUnit:'קק"ל',kcalDay:'קק"ל/יום',gUnit:'ג׳',pShort:'ח׳',cShort:'פח׳',fShort:'ש׳',
+  noht:'הגדר גובה בהגדרות קודם.',nodata:'אין נתונים לייצוא',exported:'יוצא! 📁',
+  wtbad:'הזן משקל תקין (20–300 ק"ג)',saving:'שומר...'
+}};
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let user=null, lang='en', setts={}, entries=[], foodB64=null, currentMenu=null, menuChat=[];
+let wCI=null, bCI=null, calCI=null, cRange=30;
+
+const $  = id => document.getElementById(id);
+const $s = (id,v) => { const e=$(id); if(e) e.textContent=v; };
+const t  = () => TX[lang];
+const today = () => new Date().toISOString().split('T')[0];
+const toast = m => { const e=$('toast'); e.textContent=m; e.classList.add('on'); setTimeout(()=>e.classList.remove('on'),2600); };
+const mealCol = m => ({'Breakfast':'#f59e0b','ארוחת בוקר':'#f59e0b','Lunch':'#16a34a','ארוחת צהריים':'#16a34a','Dinner':'#2563eb','ארוחת ערב':'#2563eb','Snack':'#7c3aed','חטיף':'#7c3aed'}[m]||'#6b7280');
+
+function translateMealType(m){
+  if(lang!=='he') return m;
+  return {'Breakfast':'ארוחת בוקר','Lunch':'ארוחת צהריים','Dinner':'ארוחת ערב','Snack':'חטיף'}[m]||m;
+}
+
+const bmiCat = b => { const tx=t(); if(b<18.5)return{l:tx.cats[0],c:'bb'}; if(b<25)return{l:tx.cats[1],c:'bg'}; if(b<30)return{l:tx.cats[2],c:'ba'}; return{l:tx.cats[3],c:'br'}; };
+const calcBMI = (w,h) => +((w/((h/100)**2)).toFixed(1));
+const bmiPos = b => { if(b<=10)return 0; if(b>=40)return 100; for(const[lo,hi,a,z]of[[10,18.5,0,25],[18.5,25,25,50],[25,30,50,75],[30,40,75,100]])if(b>=lo&&b<hi)return a+(b-lo)/(hi-lo)*(z-a); return 100; };
+const fmtC = v => isNaN(v)?'–':(v>0?'+':'')+v.toFixed(1)+' '+t().kgUnit;
+const cCol = v => isNaN(v)?'var(--text)':v<0?'var(--green)':v>0?'var(--red)':'var(--text2)';
+
+// ═══════════════════════════════════════════
+// LANGUAGE
+// ═══════════════════════════════════════════
+function setLang(l, loginOnly=false) {
+  lang=l;
+  document.documentElement.lang=l;
+  document.documentElement.dir=l==='he'?'rtl':'ltr';
+  ['lb-en','lb-he','lng-en','lng-he'].forEach(id=>{ const e=$(id); if(e)e.classList.remove('on'); });
+  if(l==='en'){[$('lb-en'),$('lng-en')].forEach(e=>{if(e)e.classList.add('on');});}
+  else{[$('lb-he'),$('lng-he')].forEach(e=>{if(e)e.classList.add('on');});}
+  applyTX();
+}
+
+function applyTX() {
+  const tx=t();
+  $s('ln-title',tx.lnTitle); $s('ln-sub',tx.lnSub); $s('ln-btn',tx.lnBtn); $s('ln-note',tx.lnNote);
+  $s('sk-sfx',tx.sksfx);
+  $s('n-dash',tx.nd); $s('n-add',tx.nadd); $s('n-hist',tx.nhist); $s('n-food',tx.nfood); $s('n-sett',tx.nsett);
+  $s('d-emp-txt',tx.demptxt); $s('d-emp-btn',tx.dempbtn);
+  $s('d-wt-l',tx.dwtl); $s('d-bmi-l',tx.dbmil); $s('d-sc-l',tx.dscl); $s('d-cal-ttl',tx.dCalTtl);
+  $s('bl-u',tx.blu); $s('bl-n',tx.bln); $s('bl-o',tx.blo); $s('bl-ob',tx.blob);
+  $s('d-g-l',tx.dgl); $s('gs-l',tx.gsl); $s('gt-l',tx.gtl); $s('d-c-l',tx.dcl); $s('d-ch-l',tx.dchl);
+  $s('cw-l',tx.cwl); $s('cm-l',tx.cml); $s('ct-l',tx.ctl);
+  $s('a-ttl',tx.attl); $s('a-sub',tx.asub); $s('a-wl',tx.awl); $s('a-dl',tx.adl); $s('a-nl',tx.anl);
+  const an=$('a-n'); if(an)an.placeholder=tx.anph;
+  $s('bpv-l',tx.bpvl); $s('a-btn',tx.abtn); $s('a-hint',tx.ahint);
+  $s('h-ttl',tx.httl); $s('h-exp',tx.hexp); $s('h-bmi-l',tx.hbmil); $s('h-cal-l',tx.hcall);
+  $s('ft-la',tx.ftla); $s('ft-ll',tx.ftll); $s('ft-lm',tx.ftlm);
+  $s('f-ttl',tx.fttl); $s('f-sub',tx.fsub); $s('f-tap',tx.ftap);
+  const ph=$('portion-hint-txt');
+  const camHint=$('cam-hint-txt');
+  const camOverlay=$('cam-hint-overlay');
+  const hintHe='📏 <b>טיפ:</b> לדיוק בגודל המנה, שים מטבע, מזלג או יד לצד האוכל לפני הצילום.';
+  const hintEn='📏 <b>Tip:</b> For accurate portion size, place a coin, fork, or your hand next to the food before taking the photo.';
+  const overHe='📏 שים מטבע, מזלג או יד לצד האוכל לדיוק';
+  const overEn='📏 Place a coin, fork or hand next to food for accurate size';
+  if(ph) ph.innerHTML=lang==='he'?hintHe:hintEn;
+  if(camHint) camHint.innerHTML=lang==='he'?hintHe:hintEn;
+  if(camOverlay) camOverlay.textContent=lang==='he'?overHe:overEn;
+  $s('fm-upload-l',tx.fmUpload); $s('fm-camera-l',tx.fmCamera); $s('fm-text-l',tx.fmText);
+  $s('cam-snap-l',tx.fmSnapL); $s('f-txt-l',tx.fTxtL); $s('f-txt-btn-l',tx.fTxtBtn);
+  const fti=$('f-text-inp'); if(fti)fti.placeholder=tx.fTxtPh;
+  $s('f-an-l',tx.fanl); $s('f-rs-l',tx.frsl); $s('f-ld-l',tx.fldl);
+  $s('f-dsh-l',tx.fdshL); $s('f-mt-l',tx.fmtL); $s('f-dt-l',tx.fdtL); $s('f-cf-l',tx.fcfl);
+  $s('fmt-b',tx.fmtB); $s('fmt-l',tx.fmtL2); $s('fmt-d',tx.fmtD); $s('fmt-s',tx.fmtS);
+  $s('fl-ttl',tx.flTtl); $s('fl-sum-l',tx.flSumL);
+  $s('ml-p',tx.macP); $s('ml-c',tx.macC); $s('ml-f',tx.macF);
+  $s('m-ttl',tx.mttl); $s('m-sub',tx.msub); $s('m-gl',tx.mgl); $s('m-cl',tx.mcl); $s('m-dl',tx.mdl);
+  $s('m-btn',tx.mbtn); $s('m-ld-l',tx.mldl); $s('m-chat-hd',tx.mChatHd); $s('m-chat-ld-l',tx.mChatLdl);
+  $s('m-nm-l',tx.mnml); $s('m-sv-l',tx.msvl); $s('sm-ttl',tx.smTtl);
+  $s('mg-l',tx.mgl2); $s('mg-m',tx.mgm); $s('mg-mu',tx.mgmu);
+  $s('mp-no',tx.mpno); $s('mp-vg',tx.mpvg); $s('mp-vn',tx.mpvn); $s('mp-gf',tx.mpgf); $s('mp-md',tx.mpmd);
+  $s('st-ttl',tx.stttl); $s('st-lhd',tx.stlhd);
+  $s('sw-title',tx.swTitle); $s('sw-body',tx.swBody); $s('st-bhd',tx.stbhd);
+  $s('st-hl',tx.sthl); $s('st-al',tx.stal); $s('st-gl',tx.stgl);
+  $s('sg-sl',tx.sgsl); $s('sg-m',tx.sgm); $s('sg-f',tx.sgf);
+  $s('st-act-l',tx.stActL);
+  $s('sa-none',tx.saNo); $s('sa-light',tx.saLight); $s('sa-mod',tx.saMod);
+  $s('sa-heavy',tx.saHeavy); $s('sa-extreme',tx.saEx);
+  // Refresh age display when language changes
+  updateAgeDisplay();
+  $s('st-ghd',tx.stghd); $s('st-gwl',tx.stgwl); $s('st-gdl',tx.stgdl);
+  $s('st-cahd',tx.stcahd); $s('st-cal-l',tx.stcall);
+  $s('st-sv',tx.stsv); $s('st-ahd',tx.stahd); $s('st-lo',tx.stlo);
+  const ci=$('chat-inp'); if(ci)ci.placeholder=tx.mChatPh;
+  // Update kg/kcal units throughout the UI
+  const setTxt=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setTxt('d-wt-unit',   tx.kgUnit);
+  setTxt('g-kg-1',      tx.kgUnit);
+  setTxt('g-kg-2',      tx.kgUnit);
+  setTxt('crl',         tx.kcalUnit);
+  setTxt('cal-rec-kcal',tx.kcalDay);
+  setTxt('fl-kcal-lbl', tx.kcalUnit);
+  // Update chart weight axis label — rebuild charts on lang change
+  if(entries.length) setTimeout(updateCharts, 50);
+  if(entries.length){ const last=entries[entries.length-1]; const cat=bmiCat(last.bmi); const b=$('d-bdg'); if(b){b.className='badge '+cat.c; b.textContent=cat.l;} $s('d-bmi-c',cat.l); }
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+async function loginGoogle() {
+  // Use origin + pathname so it works on localhost, GitHub Pages, Netlify — any host
+  const redirectTo = window.location.origin + window.location.pathname;
+  const {error} = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  });
+  if(error) toast('Login error: '+error.message);
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  // onAuthStateChange SIGNED_OUT will handle clearing state + showing login page
+}
+
+// ═══════════════════════════════════════════
+// DATABASE
+// ═══════════════════════════════════════════
+async function loadSettings() {
+  const {data} = await sb.from('user_settings').select('*').eq('user_id',user.id).maybeSingle();
+  if(data) {
+    setts=data;
+    if(setts.lang){ lang=setts.lang; setLang(lang); }
+    if(setts.height) $('s-h').value=setts.height;
+    if(setts.dob){ $('s-dob').value=setts.dob; updateAgeDisplay(); }
+    else if(setts.age){ /* legacy — show estimated DOB */ }
+    if(setts.gender) $('s-gen').value=setts.gender;
+    if(setts.activity_factor) $('s-activity').value=setts.activity_factor;
+    if(setts.goal_weight) $('s-gw').value=setts.goal_weight;
+    if(setts.goal_date) $('s-gd').value=setts.goal_date;
+    if(setts.daily_calorie_goal) $('s-cal').value=setts.daily_calorie_goal;
+  }
+}
+
+async function saveSettings() {
+  const h        = parseFloat($('s-h').value);
+  const dob      = $('s-dob').value;
+  const gender   = $('s-gen').value;
+  const activity = parseFloat($('s-activity').value) || 1.55;
+  const gw       = parseFloat($('s-gw').value);
+  const gd       = $('s-gd').value;
+  const cal      = parseInt($('s-cal').value) || 2000;
+  // Calculate age from DOB
+  const age = dob ? calcAgeFromDob(dob) : (setts.age || 35);
+
+  const payload={
+    user_id: user.id,
+    height: h||null, age: age||null, dob: dob||null,
+    gender: gender||null, activity_factor: activity,
+    goal_weight: gw||null, goal_date: gd||null,
+    lang, daily_calorie_goal: cal,
+    updated_at: new Date().toISOString()
+  };
+
+  console.log('[saveSettings] user.id:', user.id);
+  console.log('[saveSettings] payload:', payload);
+
+  // Check if row already exists
+  const {data:existing, error:selErr} = await sb
+    .from('user_settings').select('id').eq('user_id', user.id).maybeSingle();
+
+  if(selErr){
+    console.error('[saveSettings] SELECT error:', selErr);
+    toast('Select error: ' + selErr.message + ' | ' + selErr.code);
+    return;
+  }
+
+  console.log('[saveSettings] existing row:', existing);
+
+  let dbError;
+  if(existing){
+    const res = await sb.from('user_settings').update(payload).eq('user_id', user.id);
+    dbError = res.error;
+    console.log('[saveSettings] UPDATE result:', res);
+  } else {
+    const res = await sb.from('user_settings').insert(payload);
+    dbError = res.error;
+    console.log('[saveSettings] INSERT result:', res);
+  }
+
+  if(dbError){
+    console.error('[saveSettings] DB error:', dbError);
+    toast('Error ' + dbError.code + ': ' + dbError.message);
+    return;
+  }
+
+  setts={...setts,...payload};
+  // Hide welcome banner once user saves settings
+  const wb=$('sett-welcome'); if(wb) wb.style.display='none';
+  toast(t().stsaved);
+  // Reset menu cal input so recommendation re-applies with new goal
+  const mci=$('m-c'); if(mci) mci.value='';
+  updateAll();
+}
+
+async function loadEntries() {
+  const {data}=await sb.from('weight_entries').select('*').eq('user_id',user.id).order('date',{ascending:true});
+  entries=data||[];
+}
+
+async function saveFoodLog(item) {
+  const {error}=await sb.from('food_logs').insert({...item,user_id:user.id});
+  if(error) throw error;
+}
+
+async function deleteFoodLog(id) {
+  await sb.from('food_logs').delete().eq('id',id).eq('user_id',user.id);
+}
+
+async function loadFoodLogsDate(date) {
+  const {data}=await sb.from('food_logs').select('*').eq('user_id',user.id).eq('date',date).order('created_at');
+  return data||[];
+}
+
+async function loadFoodLogsHistory() {
+  const from=new Date(); from.setDate(from.getDate()-30);
+  const {data}=await sb.from('food_logs').select('date,calories,protein_g,carbs_g,fat_g').eq('user_id',user.id).gte('date',from.toISOString().split('T')[0]).order('date');
+  return data||[];
+}
+
+async function loadSavedMenus() {
+  const {data}=await sb.from('saved_menus').select('*').eq('user_id',user.id).order('created_at',{ascending:false});
+  return data||[];
+}
+
+async function deleteSavedMenu(id) {
+  await sb.from('saved_menus').delete().eq('id',id).eq('user_id',user.id);
+}
+
+// ═══════════════════════════════════════════
+// LOG WEIGHT
+// ═══════════════════════════════════════════
+async function logEntry() {
+  const w=parseFloat($('a-w').value), d=$('a-d').value||today(), n=$('a-n').value.trim();
+  if(!w||w<20||w>300){toast(t().wtbad);return;}
+  const h=setts.height;
+  if(!h||h<100){toast(t().noht);switchTab('settings');return;}
+  const bmi=calcBMI(w,h);
+  const btn=$('a-save-btn'); btn.disabled=true; $s('a-btn',t().saving);
+  try{
+    // Check for existing entry on same date → update it, else insert
+    const {data:existing}=await sb.from('weight_entries').select('id').eq('user_id',user.id).eq('date',d).maybeSingle();
+    let dbErr;
+    if(existing){
+      ({error:dbErr}=await sb.from('weight_entries').update({weight:w,bmi,note:n}).eq('id',existing.id).eq('user_id',user.id));
+    } else {
+      ({error:dbErr}=await sb.from('weight_entries').insert({user_id:user.id,date:d,weight:w,bmi,note:n}));
+    }
+    if(dbErr) throw dbErr;
+    await loadEntries();
+    $('a-w').value=''; $('a-n').value=''; $('bpv').style.display='none';
+    toast(t().aok); updateAll(); switchTab('dash');
+  }catch(e){toast('Error: '+e.message);}
+  btn.disabled=false; $s('a-btn',t().abtn);
+}
+
+async function deleteEntry(id) {
+  await sb.from('weight_entries').delete().eq('id',id).eq('user_id',user.id);
+  await loadEntries(); updateAll(); toast(t().hdel);
+}
+
+// ═══════════════════════════════════════════
+// UPDATE ALL UI
+// ═══════════════════════════════════════════
+// ── AGE / DOB HELPERS ────────────────────────────────────────────────────
+function calcAgeFromDob(dob){
+  const birth = new Date(dob);
+  const now   = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if(m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function updateAgeDisplay(){
+  const dob = $('s-dob').value;
+  const disp = $('s-age-display');
+  if(!disp) return;
+  if(!dob){ disp.textContent=''; return; }
+  const age = calcAgeFromDob(dob);
+  const isHe = lang === 'he';
+  if(age < 5 || age > 120){ disp.textContent = isHe ? '⚠️ תאריך לא תקין' : '⚠️ Invalid date'; return; }
+  disp.textContent = isHe ? `גיל: ${age}` : `Age: ${age}`;
+}
+
+// ── CALORIE RECOMMENDATION ───────────────────────────────────────────────
+// Calculates daily calorie recommendation based on:
+// - Most recent weight entry
+// - Goal weight from settings
+// - Days remaining to goal date
+// Uses Mifflin-St Jeor BMR + activity factor, then adjusts for deficit/surplus
+function calcCalorieRecommendation(){
+  if(!entries.length) return null;
+  const last = entries[entries.length-1];
+  const gw   = parseFloat(setts.goal_weight);
+  const gd   = setts.goal_date;
+  if(!gw || !gd) return null;
+
+  const today = new Date();
+  const goalDate = new Date(gd);
+  const daysLeft = Math.round((goalDate - today) / (1000*60*60*24));
+  if(daysLeft <= 0) return null; // goal date passed
+
+  const currentWeight = parseFloat(last.weight);
+  const weightDiff    = currentWeight - gw; // positive = need to lose, negative = need to gain
+  const totalKcalDiff = weightDiff * 7700;  // 1kg fat ≈ 7700 kcal
+  const dailyAdjust   = totalKcalDiff / daysLeft; // kcal/day to cut or add
+
+  // Calculate age: prefer DOB, fall back to stored age, default 35
+  const age    = setts.dob ? calcAgeFromDob(setts.dob) : (setts.age || 35);
+  const height = setts.height || 170;
+  const isMale = (setts.gender === 'male');
+  const actFactor = parseFloat(setts.activity_factor) || 1.55; // default: moderate
+  // Mifflin-St Jeor BMR
+  const bmr = isMale
+    ? (10 * currentWeight) + (6.25 * height) - (5 * age) + 5
+    : (10 * currentWeight) + (6.25 * height) - (5 * age) - 161;
+  // TDEE using user's actual activity level
+  const tdee = Math.round(bmr * actFactor);
+  // Recommended daily intake
+  let rec = Math.round(tdee - dailyAdjust);
+  // Safety bounds: never below 1200, never above 4000
+  rec = Math.max(1200, Math.min(4000, rec));
+
+  return {
+    rec,
+    tdee,
+    daysLeft,
+    weightDiff: +weightDiff.toFixed(1),
+    dailyAdjust: +dailyAdjust.toFixed(0)
+  };
+}
+
+// Apply calorie recommendation to Settings + Menu screens
+function applyCalorieRecommendation(){
+  const data = calcCalorieRecommendation();
+  const isHe = lang === 'he';
+  const recBox   = $('cal-rec-box');
+  const recVal   = $('cal-rec-val');
+  const recDetail= $('cal-rec-detail');
+  const recKcal  = $('cal-rec-kcal');
+  const mRecBox  = $('m-cal-rec-box');
+  const mRecTxt  = $('m-cal-rec-txt');
+  const mCalInp  = $('m-c');
+
+  if(!data){
+    if(recBox) recBox.style.display='none';
+    if(mRecBox) mRecBox.style.display='none';
+    return;
+  }
+
+  const {rec, daysLeft, weightDiff, dailyAdjust} = data;
+  const loseGain = weightDiff > 0
+    ? (isHe?'להוריד':'lose')
+    : (isHe?'להעלות':'gain');
+  const absKg = Math.abs(weightDiff).toFixed(1);
+  const actLabels = {
+    '1.2':   isHe?'יושבני':'Sedentary',
+    '1.375': isHe?'קל':'Light',
+    '1.55':  isHe?'מתון':'Moderate',
+    '1.725': isHe?'פעיל':'Active',
+    '1.9':   isHe?'פעיל מאוד':'Very active'
+  };
+  const actKey = String(parseFloat(setts.activity_factor)||1.55);
+  const actLabel = actLabels[actKey] || actLabels['1.55'];
+  const detail = isHe
+    ? `${absKg} ק"ג ${loseGain} ב-${daysLeft} ימים · פעילות: ${actLabel} · ${Math.abs(dailyAdjust)} קק"ל/יום הפרש`
+    : `${absKg} kg to ${loseGain} in ${daysLeft} days · Activity: ${actLabel} · ${Math.abs(dailyAdjust)} kcal/day diff`;
+
+  // ── Settings box ──
+  if(recBox){
+    recBox.style.display='block';
+    if(recVal)  recVal.textContent = rec;
+    if(recKcal) recKcal.textContent = isHe?'קק"ל/יום':'kcal/day';
+    if(recDetail) recDetail.textContent = detail;
+    const recLbl=$('cal-rec-label');
+    if(recLbl) recLbl.textContent = isHe?'מומלץ להשגת המטרה':'Recommended for your goal';
+  }
+
+  // ── Menu box ──
+  if(mRecBox && mRecTxt){
+    mRecBox.style.display='block';
+    mRecTxt.textContent = isHe
+      ? `💡 מומלץ: ${rec} קק"ל/יום להשגת המטרה`
+      : `💡 Recommended: ${rec} kcal/day to reach your goal`;
+  }
+
+  // ── Auto-fill menu calories input ──
+  // Rule: if user set a custom calorie goal in settings, use that; else use recommendation
+  if(mCalInp && !mCalInp.value){
+    const userGoal = setts.daily_calorie_goal;
+    if(userGoal && userGoal > 0){
+      mCalInp.value = userGoal;
+    } else {
+      mCalInp.value = rec;
+    }
+  }
+}
+
+function updateAll(){ updateDash(); updateHistory(); updateCharts(); updateStreak(); updateTodayCals(); applyCalorieRecommendation(); }
+
+function updateDash() {
+  const has=entries.length>0;
+  $('d-emp').style.display=has?'none':'block';
+  $('d-data').style.display=has?'block':'none';
+  if(!has)return;
+  const last=entries[entries.length-1];
+  $s('d-wt',parseFloat(last.weight).toFixed(1)); $s('d-bmi',parseFloat(last.bmi).toFixed(1));
+  const cat=bmiCat(last.bmi); $s('d-bmi-c',cat.l);
+  const b=$('d-bdg'); b.className='badge '+cat.c; b.textContent=cat.l;
+  $('bmi-pin').style.left=bmiPos(last.bmi).toFixed(1)+'%';
+  const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0];};
+  const e7=entries.find(e=>e.date>=ago(7));
+  const e30=entries.find(e=>e.date>=ago(30));
+  const e0=entries[0];
+  const sc=(id,v)=>{const el=$(id);el.textContent=fmtC(v);el.style.color=cCol(v);};
+  sc('cw',e7?last.weight-e7.weight:NaN); sc('cm',e30?last.weight-e30.weight:NaN); sc('ct',e0?last.weight-e0.weight:NaN);
+  if(setts.goal_weight&&e0){
+    $('gc').style.display='block';
+    const pct=Math.max(0,Math.min(100,((e0.weight-last.weight)/(e0.weight-setts.goal_weight))*100));
+    $s('g-pct',Math.round(pct)+'%'); $('g-fill').style.width=pct.toFixed(1)+'%';
+    $s('gs',parseFloat(e0.weight).toFixed(1)); $s('gt',parseFloat(setts.goal_weight).toFixed(1));
+  }else $('gc').style.display='none';
+}
+
+async function updateTodayCals() {
+  const logs=await loadFoodLogsDate(today());
+  const sumCal=logs.reduce((s,l)=>s+l.calories,0);
+  const sumP=logs.reduce((s,l)=>s+(parseFloat(l.protein_g)||0),0);
+  const sumC=logs.reduce((s,l)=>s+(parseFloat(l.carbs_g)||0),0);
+  const sumF=logs.reduce((s,l)=>s+(parseFloat(l.fat_g)||0),0);
+  const goal=setts.daily_calorie_goal||2000;
+  $s('crn',sumCal);
+  $s('d-cal-date',new Date().toLocaleDateString(lang==='he'?'he-IL':'en-GB',{weekday:'short',day:'2-digit',month:'short'}));
+  const pct=Math.min(1,sumCal/goal);
+  $('crf').style.strokeDashoffset=(301.6-(301.6*pct)).toFixed(1);
+  $('crf').style.stroke=pct>1?'var(--red)':'var(--green)';
+  const gu=t().gUnit; $s('mv-p',sumP.toFixed(0)+gu); $s('mv-c',sumC.toFixed(0)+gu); $s('mv-f',sumF.toFixed(0)+gu);
+  // Also refresh macro labels in case language changed
+  $s('ml-p',t().macP); $s('ml-c',t().macC); $s('ml-f',t().macF);
+  const mx=Math.max(sumP,sumC,sumF,1);
+  $('mf-p').style.width=(sumP/mx*100).toFixed(0)+'%'; $('mf-c').style.width=(sumC/mx*100).toFixed(0)+'%'; $('mf-f').style.width=(sumF/mx*100).toFixed(0)+'%';
+  const ml=$('d-meals-today');
+  ml.innerHTML=logs.length?'<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">'+logs.map(l=>`
+    <div class="fl-item">
+      <span class="fl-badge" style="background:${mealCol(l.meal_type)}22;color:${mealCol(l.meal_type)}">${translateMealType(l.meal_type)}</span>
+      <div class="fl-bd"><div class="fl-nm">${l.dish_name}</div></div>
+      <div class="fl-cal">${l.calories}</div>
+    </div>`).join('')+'</div>':'';
+}
+
+function updateHistory() {
+  const el=$('h-list');
+  if(!entries.length){el.innerHTML=`<div class="emp" style="padding:22px 0"><span class="ei">📋</span><p>${t().demptxt}</p></div>`;return;}
+  el.innerHTML=[...entries].reverse().map(e=>{
+    const cat=bmiCat(e.bmi);
+    const dt=new Date(e.date+'T12:00:00').toLocaleDateString(lang==='he'?'he-IL':'en-GB',{day:'2-digit',month:'short'});
+    return`<div class="ent">
+      <div class="edt">${dt}</div>
+      <div class="ebd">
+        <div class="ewt">${parseFloat(e.weight).toFixed(1)} ${t().kgUnit}</div>
+        <span class="badge ${cat.c}" style="margin-top:3px;display:inline-flex">BMI ${parseFloat(e.bmi).toFixed(1)} · ${cat.l}</span>
+        ${e.note?`<div style="font-size:12px;color:var(--text3);margin-top:2px">${e.note}</div>`:''}
+      </div>
+      <button class="bico" onclick="deleteEntry('${e.id}')">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function setRange(d){
+  cRange=d;
+  ['r7','r30','r90','r180','r365','rA'].forEach(id=>{const e=$(id);if(e)e.classList.remove('on');});
+  const activeId = d===7?'r7':d===30?'r30':d===90?'r90':d===180?'r180':d===365?'r365':'rA';
+  const activeEl=$(activeId); if(activeEl)activeEl.classList.add('on');
+  updateCharts();
+}
+
+function filtE(){
+  if(!cRange)return entries;
+  const c=new Date(); c.setDate(c.getDate()-cRange);
+  const cs=c.toISOString().split('T')[0];
+  return entries.filter(e=>e.date>=cs);
+}
+
+async function updateCharts(){
+  const fe=filtE();
+  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
+  const tc=isDark?'#4b5568':'#9ca3af';
+  const labels=fe.map(e=>new Date(e.date+'T12:00:00').toLocaleDateString(lang==='he'?'he-IL':'en-GB',{day:'2-digit',month:'short'}));
+  const base={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'#1a2235':'#fff',titleColor:tc,bodyColor:isDark?'#e8edf5':'#111827',borderColor:isDark?'#2a3a52':'#e5e7eb',borderWidth:1,padding:10,cornerRadius:8,displayColors:false}},
+    scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxTicksLimit:7}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10}}}}};
+  if(wCI)wCI.destroy();
+  const wc=$('wChart');
+  if(wc)wCI=new Chart(wc,{type:'line',data:{labels,datasets:[{data:fe.map(e=>parseFloat(e.weight)),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',borderWidth:2.5,fill:true,tension:0.4,pointBackgroundColor:'#16a34a',pointRadius:fe.length>20?2:4,pointHoverRadius:6}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' '+t().kgUnit}}}}});
+  if(bCI)bCI.destroy();
+  const bc=$('bChart');
+  if(bc)bCI=new Chart(bc,{type:'line',data:{labels,datasets:[{data:fe.map(e=>parseFloat(e.bmi)),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,fill:true,tension:0.4,pointBackgroundColor:'#2563eb',pointRadius:fe.length>20?2:4,pointHoverRadius:6}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,min:10,max:45}}}});
+  if(calCI)calCI.destroy();
+  const cc=$('calChart');
+  if(cc){
+    const calData=await loadFoodLogsHistory();
+    const byDate={};
+    calData.forEach(l=>{byDate[l.date]=(byDate[l.date]||0)+l.calories;});
+    const calLabels=Object.keys(byDate).sort().map(d=>new Date(d+'T12:00:00').toLocaleDateString(lang==='he'?'he-IL':'en-GB',{day:'2-digit',month:'short'}));
+    const calVals=Object.keys(byDate).sort().map(d=>byDate[d]);
+    const goalLine=setts.daily_calorie_goal||2000;
+    calCI=new Chart(cc,{type:'bar',data:{labels:calLabels,datasets:[
+      {data:calVals,backgroundColor:'rgba(22,163,74,.55)',borderColor:'#16a34a',borderWidth:1,borderRadius:4},
+      {type:'line',data:calLabels.map(()=>goalLine),borderColor:'#dc2626',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,tension:0}
+    ]},options:{...base,plugins:{...base.plugins,legend:{display:false}}}});
+  }
+}
+
+function updateStreak(){
+  let s=0;
+  for(let i=0;i<365;i++){const d=new Date();d.setDate(d.getDate()-i);if(entries.find(e=>e.date===d.toISOString().split('T')[0]))s++;else if(i>0)break;}
+  $s('sk-n',s);
+}
+
+function switchTab(tab){
+  ['dash','add','history','food','settings'].forEach(id=>{
+    $('s-'+id).classList.toggle('on',id===tab);
+    $('nb-'+id).classList.toggle('on',id===tab);
+  });
+  if(tab==='history'||tab==='dash')setTimeout(updateCharts,50);
+  if(tab==='settings')applyCalorieRecommendation();
+  if(tab==='food'){loadSavedMenusUI();loadFoodLog();setFoodMode('upload');applyCalorieRecommendation();}
+  else stopCamera(); // always stop camera when leaving food tab
+}
+
+// BMI preview
+$('a-w').addEventListener('input',()=>{
+  const w=parseFloat($('a-w').value), h=setts.height;
+  const box=$('bpv');
+  if(w>20&&h&&h>100){
+    const b=calcBMI(w,h); const cat=bmiCat(b);
+    $s('bpv-v',b.toFixed(1)); const pb=$('bpv-b'); pb.className='badge '+cat.c; pb.textContent=cat.l;
+    box.style.display='block';
+  }else box.style.display='none';
+});
+
+function exportCSV(){
+  if(!entries.length){toast(t().nodata);return;}
+  const rows=[['Date','Weight(kg)','BMI','Category','Note'],...entries.map(e=>[e.date,e.weight,e.bmi,bmiCat(e.bmi).l,e.note||''])];
+  const b=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='bodytrack.csv'; a.click();
+  toast(t().exported);
+}
+
+// ═══════════════════════════════════════════
+// FOOD TABS
+// ═══════════════════════════════════════════
+function showFoodTab(tab){
+  ['a','l','m'].forEach(id=>{
+    $('fp-'+id).style.display=id===tab?'block':'none';
+    const btn=$('ft-btn-'+id);
+    btn.className=id===tab?'btn btn-g btn-sm':'btn btn-s btn-sm';
+    btn.style.flex='1';
+  });
+  if(tab==='l')loadFoodLog();
+  if(tab==='m')loadSavedMenusUI();
+}
+
+// ═══════════════════════════════════════════
+// FOOD UPLOAD
+// ═══════════════════════════════════════════
+// ── FOOD MODE SWITCHER ────────────────────────────────────────────
+let camStream = null;
+let currentFoodMode = 'upload';
+
+function setFoodMode(mode){
+  currentFoodMode = mode;
+  // Toggle panel visibility
+  ['upload','camera','text'].forEach(m => {
+    $('fm-'+m).style.display = m===mode ? 'block' : 'none';
+    const btn = $('fm-btn-'+m);
+    btn.className = m===mode ? 'btn btn-g btn-sm' : 'btn btn-s btn-sm';
+    btn.style.flex = '1';
+  });
+  // Hide preview + confirm when switching mode
+  $('f-pw').style.display='none';
+  $('f-cf').style.display='none';
+  $('f-cfbox').innerHTML='';
+  foodB64=null; window._lastFood=null;
+  // Start/stop camera
+  if(mode==='camera') startCamera();
+  else stopCamera();
+  // Clear text
+  if(mode!=='text') { const ti=$('f-text-inp'); if(ti) ti.value=''; }
+}
+
+// ── UPLOAD MODE ───────────────────────────────────────────────────
+function handleFoodImg(e){
+  const f=e.target.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    compressAndSetImage(ev.target.result);
+  };
+  reader.readAsDataURL(f);
+}
+
+function compressAndSetImage(dataUrl){
+  const img=new Image();
+  img.onload=()=>{
+    const canvas=document.createElement('canvas');
+    const MAX=800;
+    let w=img.width, h=img.height;
+    if(w>MAX||h>MAX){
+      if(w>h){ h=Math.round(h*MAX/w); w=MAX; }
+      else{ w=Math.round(w*MAX/h); h=MAX; }
+    }
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    const compressed=canvas.toDataURL('image/jpeg',0.8);
+    foodB64={data:compressed.split(',')[1], mime:'image/jpeg'};
+    console.log('[Food image] compressed to', Math.round(compressed.length/1024)+'KB', w+'x'+h);
+    $('f-pi').src=compressed;
+    $('f-pw').style.display='block';
+    // Hide the dropzone so confirm shows cleanly
+    $('dz').style.display='none';
+    $('f-cf').style.display='none';
+    $('f-cfbox').innerHTML='';
+  };
+  img.src=dataUrl;
+}
+
+// ── CAMERA MODE ───────────────────────────────────────────────────
+async function startCamera(){
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},
+      audio:false
+    });
+    $('cam-video').srcObject=camStream;
+    $('cam-snap-btn').disabled=false;
+  }catch(err){
+    console.error('Camera error:',err);
+    // Fall back to file upload if camera denied
+    alert(lang==='he'?'לא ניתן לגשת למצלמה. נסה להעלות תמונה.':'Camera access denied. Please use upload instead.');
+    setFoodMode('upload');
+  }
+}
+
+function stopCamera(){
+  if(camStream){
+    camStream.getTracks().forEach(t=>t.stop());
+    camStream=null;
+  }
+  const v=$('cam-video');
+  if(v) v.srcObject=null;
+}
+
+async function snapPhoto(){
+  const video=$('cam-video');
+  const canvas=$('cam-canvas');
+  if(!video||!canvas)return;
+
+  // 3-second countdown
+  const countdown=$('cam-countdown');
+  countdown.style.display='flex';
+  for(let i=3;i>=1;i--){
+    countdown.textContent=i;
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  countdown.style.display='none';
+
+  // Capture frame from video
+  canvas.width=video.videoWidth||640;
+  canvas.height=video.videoHeight||480;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const dataUrl=canvas.toDataURL('image/jpeg',0.9);
+
+  // Stop camera stream (photo not saved to device — stays in memory only)
+  stopCamera();
+  $('fm-camera').style.display='none';
+
+  // Compress and show preview
+  compressAndSetImage(dataUrl);
+}
+
+// ── TEXT MODE ─────────────────────────────────────────────────────
+async function analyzeText(){
+  const txt=$('f-text-inp').value.trim();
+  if(!txt){ toast(lang==='he'?'תאר מה אכלת':'Please describe what you ate'); return; }
+
+  $('f-ld').style.display='flex';
+  $('f-cf').style.display='none';
+  const tx=t();
+
+  const foodSchema={
+    type:'object',
+    properties:{
+      name:{type:'string',maxLength:30},
+      serving_g:{type:'integer'},
+      calories:{type:'integer'},
+      protein_g:{type:'number'},
+      carbs_g:{type:'number'},
+      fat_g:{type:'number'},
+      fiber_g:{type:'number'},
+      tip:{type:'string',maxLength:25}
+    },
+    required:['name','serving_g','calories','protein_g','carbs_g','fat_g','fiber_g']
+  };
+
+  try{
+    // Force JSON-only response. Ask for Hebrew name if app is in Hebrew.
+    const nameInstr = lang==='he' ? 'Use Hebrew for the name and tip fields.' : 'Use English for name and tip.';
+    const prompt = 'Nutrition expert. Calculate nutritional values for: "'+txt+'". '
+      + nameInstr + ' '
+      + 'Respond with ONLY a JSON object, no other text. '
+      + 'Format: {"name":"dish name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip"}';
+
+    const raw=await callGemini([{text:prompt}],4096,1,foodSchema);
+    const r=parseJSON(raw);
+    window._lastFood=r;
+    showFoodConfirm(r, tx);
+  }catch(err){
+    console.error(err);
+    _baseFood=null; window._lastFood=null;
+    $('f-cf').style.display='none';
+    $('f-cfbox').innerHTML='';
+    const errDiv=document.createElement('div');
+    errDiv.id='f-err-msg';
+    errDiv.style.cssText='color:var(--red);font-size:14px;font-weight:600;padding:12px 0';
+    errDiv.innerHTML=`❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small>`;
+    const old=$('f-err-msg'); if(old)old.remove();
+    $('f-ld').insertAdjacentElement('afterend', errDiv);
+  }
+  $('f-ld').style.display='none';
+}
+
+// ── SHARED: show confirm panel ────────────────────────────────────
+let _baseFood = null;
+let _portionPct = 100;
+let _customPortionOpen = false;
+
+function showFoodConfirm(r, tx){
+  _baseFood = r;
+  _portionPct = 100;
+  _customPortionOpen = false;
+  // Build the static confirm box HTML once
+  const isHe = lang === 'he';
+  $('f-cfbox').innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.6px;margin-bottom:9px">✨ ${tx.fair||'AI Analysis'}</div>
+    <div style="font-size:17px;font-weight:800" id="cfb-name">${r.name}</div>
+    <div style="font-size:12px;color:var(--green);margin-top:2px" id="cfb-serving">${r.serving_g ? r.serving_g+'g' : ''}</div>
+    <div style="display:flex;align-items:baseline;gap:5px;margin:8px 0">
+      <span style="font-size:30px;font-weight:900;color:var(--green)" id="cfb-cal">${r.calories}</span>
+      <span style="font-size:13px;color:var(--text2)">${tx.kcal}</span>
+    </div>
+    <div class="mac-g">
+      <div class="mb"><div class="mv" id="cfb-p">${r.protein_g}g</div><div class="mn">${tx.macP}</div></div>
+      <div class="mb"><div class="mv" id="cfb-c">${r.carbs_g}g</div><div class="mn">${tx.macC}</div></div>
+      <div class="mb"><div class="mv" id="cfb-f">${r.fat_g}g</div><div class="mn">${tx.macF}</div></div>
+      <div class="mb"><div class="mv" id="cfb-fi">${r.fiber_g}g</div><div class="mn">${tx.macFib}</div></div>
+    </div>
+    ${r.tip?`<div style="margin-top:9px;font-size:12px;color:var(--gdk);border-top:1px solid rgba(22,163,74,.2);padding-top:9px">💡 ${r.tip}</div>`:''}
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:7px">${isHe?'🍽️ כמה אכלת?':'🍽️ How much did you eat?'}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="portion-btns">
+        ${[100,75,50,33,25].map(p=>`
+          <button id="pbtn-${p}" onclick="setPortion(${p})"
+            style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid ${p===100?'var(--green)':'var(--border2)'};background:${p===100?'var(--green)':'var(--card2)'};color:${p===100?'#fff':'var(--text2)'};cursor:pointer;transition:all .15s">
+            ${p===100?(isHe?'הכל 100%':'All 100%'):p+'%'}
+          </button>`).join('')}
+        <button id="pbtn-custom" onclick="toggleCustomPortion()"
+          style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid var(--border2);background:var(--card2);color:var(--text2);cursor:pointer;transition:all .15s">
+          ${isHe?'אחר...':'Other...'}
+        </button>
+      </div>
+      <div id="custom-pct-wrap" style="display:none;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="custom-pct-inp" class="fi" style="width:90px;padding:8px"
+            min="1" max="100" placeholder="${isHe?'אחוז':'%'}">
+          <button onclick="applyCustomPortion()"
+            style="padding:8px 14px;border-radius:var(--r2);background:var(--green);color:#fff;border:none;font-weight:700;cursor:pointer;font-size:13px">
+            ${isHe?'אישור':'OK'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  $('f-dsh').value = r.name;
+  $('f-dt').value = today();
+  const hr = new Date().getHours();
+  $('f-mt').value = hr<10?'Breakfast':hr<14?'Lunch':hr<18?'Dinner':'Snack';
+  $('f-cf').style.display = 'block';
+  // Show low-confidence warning if Gemini couldn't find a reference object
+  const lcWarn = $('lc-warning');
+  if(lcWarn){
+    if(r.low_confidence){
+      lcWarn.style.display='block';
+      lcWarn.textContent = lang==='he'
+        ? '⚠️ לא נמצא אובייקט ייחוס בתמונה — הגודל מוערך. לדיוק גבוה יותר, צלם שוב עם מטבע, מזלג או יד לצד האוכל.'
+        : '⚠️ No reference object found — portion size is estimated. For better accuracy, retake the photo with a coin, fork, or hand next to the food.';
+    }else{
+      lcWarn.style.display='none';
+    }
+  }
+}
+
+// Update only the numeric values — don't re-render the whole box
+function updatePortionDisplay(pct){
+  if(!_baseFood) return;
+  const factor = pct / 100;
+  const cal   = Math.round(_baseFood.calories   * factor);
+  const prot  = +(_baseFood.protein_g * factor).toFixed(1);
+  const carbs = +(_baseFood.carbs_g   * factor).toFixed(1);
+  const fat   = +(_baseFood.fat_g     * factor).toFixed(1);
+  const fiber = +(_baseFood.fiber_g   * factor).toFixed(1);
+  // Update numbers in place — no DOM rebuild
+  const sv = id => { const e=$(id); if(e) e.textContent=sv._v; };
+  const set = (id,v) => { const e=$(id); if(e) e.textContent=v; };
+  set('cfb-cal', cal);
+  const gu2=t().gUnit;
+  set('cfb-p',   prot+gu2);
+  set('cfb-c',   carbs+gu2);
+  set('cfb-f',   fat+gu2);
+  set('cfb-fi',  fiber+gu2);
+  // Update serving label with percentage badge
+  const servEl = $('cfb-serving');
+  if(servEl) servEl.innerHTML = (_baseFood.serving_g ? _baseFood.serving_g+t().gUnit+' ' : '') +
+    (pct<100 ? '<span style="color:var(--amber);font-weight:700">('+pct+'%)</span>' : '');
+  // Highlight active button
+  [100,75,50,33,25].forEach(p=>{
+    const btn=$('pbtn-'+p);
+    if(!btn)return;
+    const active = p===pct;
+    btn.style.background = active?'var(--green)':'var(--card2)';
+    btn.style.color       = active?'#fff':'var(--text2)';
+    btn.style.borderColor = active?'var(--green)':'var(--border2)';
+  });
+  // Highlight "Other" button if custom value
+  const customBtn = $('pbtn-custom');
+  if(customBtn){
+    const customActive = ![100,75,50,33,25].includes(pct);
+    customBtn.style.background  = customActive?'var(--green)':'var(--card2)';
+    customBtn.style.color        = customActive?'#fff':'var(--text2)';
+    customBtn.style.borderColor  = customActive?'var(--green)':'var(--border2)';
+  }
+}
+
+function setPortion(pct){
+  _portionPct = Math.min(100, Math.max(1, pct));
+  updatePortionDisplay(_portionPct);
+  $('f-dsh').value = _baseFood.name;
+}
+
+function toggleCustomPortion(){
+  _customPortionOpen = !_customPortionOpen;
+  const wrap = $('custom-pct-wrap');
+  if(wrap) wrap.style.display = _customPortionOpen ? 'block' : 'none';
+  // If opening, focus the input
+  if(_customPortionOpen){
+    setTimeout(()=>{ const inp=$('custom-pct-inp'); if(inp)inp.focus(); },50);
+  }
+}
+
+function applyCustomPortion(){
+  const inp = $('custom-pct-inp');
+  const val = parseInt(inp ? inp.value : 0);
+  if(!val || val<1 || val>100){
+    toast(lang==='he'?'הזן מספר בין 1 ל-100':'Enter a number between 1 and 100');
+    return;
+  }
+  setPortion(val);
+  // Keep input value visible and close wrap
+  _customPortionOpen = false;
+  const wrap = $('custom-pct-wrap');
+  if(wrap) wrap.style.display = 'none';
+}
+
+function resetFood(){
+  foodB64=null; window._lastFood=null;
+  _baseFood=null; _portionPct=100; _customPortionOpen=false;
+  stopCamera();
+  $('f-pw').style.display='none';
+  $('f-cf').style.display='none';
+  $('f-cfbox').innerHTML='';
+  $('f-inp').value='';
+  $('dz').style.display='block';
+  setFoodMode(currentFoodMode);
+}
+
+// ═══════════════════════════════════════════
+// GEMINI AI
+// ═══════════════════════════════════════════
+async function callGemini(parts, maxOut=2048, attempt=1, schema=null){
+  const genConfig={maxOutputTokens:maxOut,temperature:0.7};
+  // If schema provided, force JSON output mode — Gemini MUST return valid JSON
+  if(schema){ genConfig.responseMimeType='application/json'; genConfig.responseSchema=schema; }
+  const body={contents:[{parts}],generationConfig:genConfig};
+  const res=await fetch(GM_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!res.ok){
+    let errMsg='Gemini HTTP '+res.status;
+    let errCode=res.status;
+    try{
+      const errData=await res.json();
+      if(errData.error?.message) errMsg=errData.error.message;
+      else errMsg=JSON.stringify(errData);
+    }catch(e){}
+    console.error('[Gemini error]', res.status, errMsg);
+    // Auto-retry once on 503 (overloaded) or 429 (rate limit) after 3 seconds
+    if((errCode===503||errCode===429) && attempt===1){
+      console.log('[Gemini] Retrying in 3s...');
+      await new Promise(r=>setTimeout(r,3000));
+      return callGemini(parts, maxOut, 2);
+    }
+    throw new Error('Gemini '+res.status+': '+errMsg);
+  }
+  const data=await res.json();
+  console.log('[Gemini response]', data);
+  if(data.error) throw new Error(data.error.message);
+  // Log full response for debugging
+  console.log('[Gemini full response]', JSON.stringify(data).slice(0,500));
+
+  // Check for blocked/filtered response
+  if(data.candidates?.[0]?.finishReason === 'SAFETY'){
+    throw new Error('Gemini blocked the request for safety reasons. Try a different image.');
+  }
+  if(data.candidates?.[0]?.finishReason === 'RECITATION'){
+    throw new Error('Gemini recitation filter triggered. Try again.');
+  }
+  if(data.promptFeedback?.blockReason){
+    throw new Error('Gemini blocked prompt: '+data.promptFeedback.blockReason);
+  }
+
+  const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  if(!text){
+    const reason=data.candidates?.[0]?.finishReason||'unknown';
+    throw new Error('Gemini returned empty text. finishReason: '+reason+' | response: '+JSON.stringify(data).slice(0,300));
+  }
+  return text;
+}
+
+function parseJSON(raw){
+  if(!raw || !raw.trim()) throw new Error('Gemini returned empty text response');
+
+  // Strip markdown fences
+  let s=raw.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();
+
+  // Try clean JSON first
+  const isArr = s.indexOf('[') >= 0 && (s.indexOf('[') < s.indexOf('{') || s.indexOf('{') < 0);
+  if(isArr){
+    const fi=s.indexOf('['), li=s.lastIndexOf(']');
+    if(fi>=0 && li>fi){
+      try{ return JSON.parse(s.slice(fi,li+1)); }catch(e){}
+    }
+  } else {
+    const fi=s.indexOf('{'), li=s.lastIndexOf('}');
+    if(fi>=0 && li>fi){
+      try{ return JSON.parse(s.slice(fi,li+1)); }catch(e){}
+    }
+  }
+
+  // Try fixing truncated JSON
+  try{
+    let attempt=s;
+    let opens=0, openb=0;
+    for(const c of attempt){ if(c==='{')opens++; if(c==='}')opens--; if(c==='[')openb++; if(c===']')openb--; }
+    if(attempt.match(/"[^"]*$/)) attempt=attempt.replace(/"[^"]*$/, '"');
+    while(openb>0){ attempt+=']}'; openb--; }
+    while(opens>0){ attempt+='}'; opens--; }
+    return JSON.parse(attempt);
+  }catch(e){}
+
+  // ── MARKDOWN FALLBACK ────────────────────────────────────────────
+  // Gemini sometimes returns Hebrew/markdown instead of JSON.
+  // Extract numbers from the text and build a nutrition object.
+  console.warn('[parseJSON] Falling back to markdown extraction. Raw:', s.slice(0,200));
+  const extractNum = (patterns) => {
+    for(const p of patterns){
+      const m = s.match(p);
+      if(m) return parseFloat(m[1].replace(',','.'));
+    }
+    return null;
+  };
+  // Extract dish name — first bold text or first line
+  let name = '';
+  const boldMatch = s.match(/\*\*([^*\n]{2,40})\*\*/);
+  if(boldMatch) name = boldMatch[1].replace(/[*:]/g,'').trim();
+  if(!name){ const firstLine = s.split('\n')[0].replace(/[*#:]/g,'').trim(); name=firstLine.slice(0,40)||'Unknown dish'; }
+
+  const cal   = extractNum([/קלוריות[^\d]*(\d+)/,/calories[^\d]*(\d+)/i,/(\d+)\s*(?:קק"ל|kcal)/i]);
+  const prot  = extractNum([/חלבון[^\d]*(\d+)/,/protein[^\d]*(\d+)/i,/(\d+)\s*ג.*חלבון/]);
+  const carbs = extractNum([/פחמימות[^\d]*(\d+)/,/carb[^\d]*(\d+)/i,/(\d+)\s*ג.*פחמ/]);
+  const fat   = extractNum([/שומן[^\d]*(\d+)/,/fat[^\d]*(\d+)/i,/(\d+)\s*ג.*שומן/]);
+  const fiber = extractNum([/סיבים[^\d]*(\d+)/,/fiber[^\d]*(\d+)/i,/(\d+)\s*ג.*סיב/]);
+
+  if(cal){
+    console.log('[parseJSON] Markdown extraction succeeded:', {name,cal,prot,carbs,fat,fiber});
+    return {
+      name: name||'Unknown dish',
+      serving_g: 200,
+      calories:  cal,
+      protein_g: prot||0,
+      carbs_g:   carbs||0,
+      fat_g:     fat||0,
+      fiber_g:   fiber||0,
+      tip: '',
+      low_confidence: true
+    };
+  }
+
+  throw new Error('No JSON found in response: '+s.slice(0,300));
+}
+
+// ═══════════════════════════════════════════
+// FOOD ANALYSIS
+// ═══════════════════════════════════════════
+async function analyzeFood(){
+  if(!foodB64)return;
+  $('f-ld').style.display='flex'; $('f-cf').style.display='none';
+  // Clear previous error message if any
+  const prevErr=$('f-err-msg'); if(prevErr)prevErr.remove();
+  const tx=t();
+  try{
+    const foodSchema={
+      type:'object',
+      properties:{
+        name:{type:'string',maxLength:40},
+        serving_g:{type:'integer'},
+        calories:{type:'integer'},
+        protein_g:{type:'number'},
+        carbs_g:{type:'number'},
+        fat_g:{type:'number'},
+        fiber_g:{type:'number'},
+        tip:{type:'string',maxLength:30},
+        low_confidence:{type:'boolean'}
+      },
+      required:['name','serving_g','calories','protein_g','carbs_g','fat_g','fiber_g']
+    };
+    const raw=await callGemini([
+      {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
+      {text:'IMPORTANT: Respond with ONLY a JSON object. No markdown, no asterisks, no bullet points, no explanation. Just raw JSON. '
+        +(lang==='he'?'Use Hebrew for name and tip values only, inside the JSON. ':'')
+        +'Analyze this food image carefully. PORTION ESTIMATION RULES: '
+        +'1) Look for reference objects in the image (coins, hands, phones, plates, cutlery, cups) to estimate real size. '
+        +'2) If a standard plate is visible, use typical plate diameter (26cm) as scale reference. '
+        +'3) If a fork/spoon is visible, use standard fork length (18cm) as scale. '
+        +'4) If no reference object is visible, estimate based on food type and typical serving sizes, then set low_confidence:true. '
+        +'5) Estimate serving_g based on visual volume and food density. '
+        +'JSON format: {"name":"food name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip","low_confidence":false}'}
+    ],4096,1,foodSchema);
+    const r=parseJSON(raw);
+    window._lastFood=r;
+    showFoodConfirm(r, tx);
+  }catch(err){
+    console.error(err);
+    // Clear any stale food result — never show old data after a failure
+    _baseFood=null; window._lastFood=null;
+    $('f-cf').style.display='none';
+    $('f-cfbox').innerHTML='';
+    const errDiv=document.createElement('div');
+    errDiv.id='f-err-msg';
+    errDiv.style.cssText='color:var(--red);font-size:14px;font-weight:600;padding:12px 0';
+    errDiv.innerHTML=`❌ ${tx.ffail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small>`;
+    const oldErr=$('f-err-msg'); if(oldErr)oldErr.remove();
+    $('f-ld').insertAdjacentElement('afterend', errDiv);
+  }
+  $('f-ld').style.display='none';
+}
+
+async function confirmFoodLog(){
+  const r=window._lastFood; if(!r)return;
+  const dish=$('f-dsh').value.trim()||r.name;
+  const mt=$('f-mt').value, dt=$('f-dt').value||today();
+  // Apply portion percentage
+  const factor = (_portionPct||100) / 100;
+  const logData = {
+    date: dt, meal_type: mt, dish_name: dish,
+    calories:  Math.round(r.calories   * factor),
+    protein_g: +( r.protein_g * factor).toFixed(1),
+    carbs_g:   +( r.carbs_g   * factor).toFixed(1),
+    fat_g:     +( r.fat_g     * factor).toFixed(1),
+    fiber_g:   +( r.fiber_g   * factor).toFixed(1)
+  };
+  try{
+    await saveFoodLog(logData);
+    toast(t().fsaved); resetFood(); updateTodayCals();
+  }catch(e){toast('Error: '+e.message);}
+}
+
+// ═══════════════════════════════════════════
+// FOOD LOG TAB
+// ═══════════════════════════════════════════
+async function loadFoodLog(){
+  const dtEl=$('fl-dt');
+  if(!dtEl.value) dtEl.value=today();
+  const date=dtEl.value;
+  const logs=await loadFoodLogsDate(date);
+  const el=$('fl-list'), sum=$('fl-sum');
+  if(!logs.length){ el.innerHTML=`<div class="emp" style="padding:22px 0"><span class="ei">🥗</span><p>${t().demptxt}</p></div>`; sum.style.display='none'; return; }
+  const tc=logs.reduce((s,l)=>s+l.calories,0);
+  const tp=logs.reduce((s,l)=>s+(parseFloat(l.protein_g)||0),0);
+  const tcc=logs.reduce((s,l)=>s+(parseFloat(l.carbs_g)||0),0);
+  const tf=logs.reduce((s,l)=>s+(parseFloat(l.fat_g)||0),0);
+  sum.style.display='block';
+  const tx=t();
+  $s('fl-total',tc); $s('fl-kcal-lbl',tx.kcalUnit);
+  $s('fl-p',tx.macP+': '+tp.toFixed(0)+tx.gUnit);
+  $s('fl-c',tx.macC+': '+tcc.toFixed(0)+tx.gUnit);
+  $s('fl-f',tx.macF+': '+tf.toFixed(0)+tx.gUnit);
+  el.innerHTML=logs.map(l=>`
+    <div class="fl-item">
+      <span class="fl-badge" style="background:${mealCol(l.meal_type)}22;color:${mealCol(l.meal_type)}">${translateMealType(l.meal_type)}</span>
+      <div class="fl-bd">
+        <div class="fl-nm">${l.dish_name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:1px">${parseFloat(l.protein_g||0).toFixed(0)}${t().gUnit} ${t().pShort} · ${parseFloat(l.carbs_g||0).toFixed(0)}${t().gUnit} ${t().cShort} · ${parseFloat(l.fat_g||0).toFixed(0)}${t().gUnit} ${t().fShort}</div>
+      </div>
+      <div class="fl-cal">${l.calories}</div>
+      <button class="bico" style="background:none;color:var(--text3)" onclick="rmFoodLog('${l.id}')">🗑️</button>
+    </div>`).join('');
+}
+
+async function rmFoodLog(id){
+  await deleteFoodLog(id); await loadFoodLog(); updateTodayCals(); toast(t().hdel);
+}
+
+// ═══════════════════════════════════════════
+// MENU GENERATOR + CHAT
+// ═══════════════════════════════════════════
+// Schema defined at module level so both generateMenu and sendChat can access it
+const menuSchema={
+  type:'array',
+  items:{
+    type:'object',
+    properties:{
+      day:{type:'string',maxLength:12},
+      total:{type:'integer'},
+      meals:{
+        type:'array',
+        items:{
+          type:'object',
+          properties:{
+            type:{type:'string',maxLength:15},
+            name:{type:'string',maxLength:30},
+            cal:{type:'integer'}
+          },
+          required:['type','name','cal']
+        }
+      }
+    },
+    required:['day','meals','total']
+  }
+};
+
+async function generateMenu(){
+  const goal=$('m-g').value, cals=parseInt($('m-c').value)||1800, pref=$('m-p').value;
+  const lw=entries.length?entries[entries.length-1].weight:null;
+  const isHe=lang==='he';
+  $('m-ld').style.display='flex'; $('m-disp').style.display='none'; $('m-chat').style.display='none'; $('m-save-row').style.display='none';
+
+  // Hebrew prompt uses Israeli days and Hebrew meal names
+  const prompt = isHe
+    ? 'תפריט שבועי ישראלי ל-7 ימים. מטרה:'+goal+'. ~'+cals+' קלוריות/יום. תזונה:'+pref+'.'+(lw?' משקל:'+lw+'ק"ג.':'')+' החזר JSON בלבד. שמות ארוחות בעברית קצרים (מקסימום 3 מילים). ימים בעברית: ראשון/שני/שלישי/רביעי/חמישי/שישי/שבת. סוגי ארוחות: בוקר/צהריים/ערב/חטיף. דוגמה:[{"day":"ראשון","meals":[{"type":"בוקר","name":"דייסת שיבולת שועל","cal":350},{"type":"צהריים","name":"סלט עוף","cal":500},{"type":"ערב","name":"סלמון בתנור","cal":550},{"type":"חטיף","name":"יוגורט עם פירות","cal":150}],"total":1550}]. שנה ארוחות בכל יום.'
+    : '7-day meal plan. Goal:'+goal+'. ~'+cals+' kcal/day. Diet:'+pref+'.'+(lw?' Weight:'+lw+'kg.':'')+' JSON array only. Meal names MAX 3 WORDS. Days: Mon/Tue/Wed/Thu/Fri/Sat/Sun. Types: Breakfast/Lunch/Dinner/Snack. Example:[{"day":"Mon","meals":[{"type":"Breakfast","name":"Oat Porridge","cal":350},{"type":"Lunch","name":"Chicken Salad","cal":500},{"type":"Dinner","name":"Grilled Salmon","cal":550},{"type":"Snack","name":"Mixed Nuts","cal":150}],"total":1550}]. Vary meals daily.';
+
+  try{
+    const raw=await callGemini([{text:prompt}],4096,1,menuSchema);
+    currentMenu=parseJSON(raw);
+    menuChat=[{role:'user',parts:[{text:prompt}]},{role:'model',parts:[{text:raw}]}];
+    renderMenuDisplay(currentMenu);
+    $('chat-msgs').innerHTML=`<div class="msg msg-ai">${t().mChatHd} 💬</div>`;
+    $('m-chat').style.display='block'; $('m-save-row').style.display='block';
+  }catch(err){
+    console.error(err);
+    $('m-disp').innerHTML=`<div style="color:var(--red);font-size:14px;font-weight:600;padding:12px 0">❌ ${t().mfail}<br><small style="color:var(--text3);font-weight:400">${err.message}</small></div>`;
+    $('m-disp').style.display='block';
+  }
+  $('m-ld').style.display='none';
+}
+
+async function sendChat(){
+  const inp=$('chat-inp'), msg=inp.value.trim(); if(!msg)return;
+  const isHe=lang==='he';
+  inp.value=''; addMsg(msg,'user'); $('m-chat-ld').style.display='flex';
+  // Tell Gemini to keep same language as current menu
+  const updatePrompt=isHe
+    ? 'עדכן את התפריט השבועי לפי בקשת המשתמש. תפריט נוכחי: '+JSON.stringify(currentMenu)+'. בקשה: "'+msg+'". החזר JSON מלא מעודכן בלבד, אותו פורמט, שמות ארוחות בעברית.'
+    : 'Update the weekly menu based on user request. Current menu: '+JSON.stringify(currentMenu)+'. Request: "'+msg+'". Return ONLY the complete updated JSON array, same format.';
+  menuChat.push({role:'user',parts:[{text:updatePrompt}]});
+  try{
+    const raw=await callGemini(menuChat.flatMap(m=>m.parts),4096,1,menuSchema);
+    currentMenu=parseJSON(raw);
+    menuChat.push({role:'model',parts:[{text:raw}]});
+    renderMenuDisplay(currentMenu);
+    addMsg(isHe?'✅ התפריט עודכן!':'✅ Menu updated!','ai');
+  }catch(err){ addMsg('❌ '+err.message,'ai'); }
+  $('m-chat-ld').style.display='none';
+}
+
+function addMsg(text,role){
+  const msgs=$('chat-msgs');
+  const div=document.createElement('div'); div.className='msg msg-'+role; div.textContent=text;
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function renderMenuDisplay(menu){
+  $('m-disp').innerHTML=menu.map(d=>`
+    <div class="mday">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+        <span style="font-size:13px;font-weight:800">${d.day}</span>
+        <span style="font-size:11px;color:var(--text3)">${d.total||'–'} ${t().kcalUnit}</span>
+      </div>
+      ${(d.meals||[]).map(m=>`<div class="mline"><span class="mtype">${m.type}</span><span class="mname">${m.name}</span><span class="mcal">${m.cal} ${t().kcalUnit}</span></div>`).join('')}
+    </div>`).join('');
+  $('m-disp').style.display='block';
+}
+
+async function saveMenu(){
+  const name=$('m-nm').value.trim()||(lang==='he'?'התפריט שלי':'My Menu');
+  if(!currentMenu){toast(t().mfail);return;}
+  const {error}=await sb.from('saved_menus').insert({
+    user_id:user.id, name, goal:$('m-g').value,
+    calories_per_day:parseInt($('m-c').value)||1800, diet_type:$('m-p').value, menu_data:currentMenu
+  });
+  if(error){toast('Error: '+error.message);return;}
+  toast(t().msaved); $('m-nm').value=''; await loadSavedMenusUI();
+}
+
+async function loadSavedMenusUI(){
+  const menus=await loadSavedMenus();
+  const el=$('sm-list');
+  if(!menus.length){el.innerHTML=`<div class="emp" style="padding:18px 0"><span class="ei">📅</span><p>${t().smEmpty}</p></div>`;return;}
+  el.innerHTML=menus.map(m=>`
+    <div class="sm-card" onclick="openMenu('${m.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${m.goal||''} · ${m.calories_per_day||'–'} kcal/day · ${new Date(m.created_at).toLocaleDateString(lang==='he'?'he-IL':'en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button onclick="event.stopPropagation();editMenu('${m.id}')"
+            style="padding:6px 10px;border-radius:var(--r3);background:var(--bl);color:var(--blue);border:1px solid rgba(37,99,235,.3);cursor:pointer;font-size:12px;font-weight:700">
+            ${lang==='he'?'✏️ ערוך':'✏️ Edit'}
+          </button>
+          <button onclick="event.stopPropagation();rmMenu('${m.id}')"
+            style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3)">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function editMenu(id){
+  const menus = await loadSavedMenus();
+  const m = menus.find(x=>x.id===id); if(!m)return;
+
+  // Load this menu into the generator so user can refine via chat
+  currentMenu = m.menu_data;
+  menuChat = [
+    {role:'user',parts:[{text:'Existing menu to edit: '+JSON.stringify(currentMenu)}]},
+    {role:'model',parts:[{text:JSON.stringify(currentMenu)}]}
+  ];
+
+  // Switch to menu panel and show it loaded
+  showFoodTab('m');
+  renderMenuDisplay(currentMenu);
+
+  // Pre-fill name with existing name
+  $('m-nm').value = m.name + (lang==='he'?' (עריכה)':' (edited)');
+
+  // Show chat and save row
+  $('chat-msgs').innerHTML = `<div class="msg msg-ai">${lang==='he'?'✏️ עורך: '+m.name+' — מה לשנות?':'✏️ Editing: '+m.name+' — what would you like to change?'} 💬</div>`;
+  $('m-chat').style.display = 'block';
+  $('m-save-row').style.display = 'block';
+  $('m-disp').style.display = 'block';
+
+  // Scroll to top of menu panel
+  $('fp-m').scrollIntoView({behavior:'smooth', block:'start'});
+
+  toast(lang==='he'?'✏️ מחק שינויים כאן':'✏️ Refine then save as new');
+}
+
+async function openMenu(id){
+  const menus=await loadSavedMenus();
+  const m=menus.find(x=>x.id===id); if(!m)return;
+  $('m-hd-txt').textContent=m.name;
+  $('m-hd-body').innerHTML=m.menu_data.map(d=>`
+    <div class="mday">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+        <span style="font-size:13px;font-weight:800">${d.day}</span>
+        <span style="font-size:11px;color:var(--text3)">${d.total||'–'} ${t().kcalUnit}</span>
+      </div>
+      ${(d.meals||[]).map(ml=>`<div class="mline"><span class="mtype">${ml.type}</span><span class="mname">${ml.name}</span><span class="mcal">${ml.cal}</span></div>`).join('')}
+    </div>`).join('');
+  $('mbg').classList.remove('hidden');
+}
+
+async function rmMenu(id){ await deleteSavedMenu(id); await loadSavedMenusUI(); toast(t().hdel); }
+function closeModal(){ $('mbg').classList.add('hidden'); }
+
+// ═══════════════════════════════════════════
+// PAGE SWITCH
+// ═══════════════════════════════════════════
+function showPage(id){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  $(id).classList.add('on');
+}
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+
+// Central function — called whenever we have a confirmed session
+async function initApp(session) {
+  user = session.user;
+
+  // ── Step 1: Load all data while splash is still visible ──────────────
+  await Promise.all([loadSettings(), loadEntries()]);
+
+  // ── Step 2: Apply language immediately (correct from first frame) ─────
+  if(setts.lang) setLang(setts.lang);
+
+  // ── Step 3: Set user info ─────────────────────────────────────────────
+  const meta = user.user_metadata || {};
+  $s('tp-user', meta.full_name || meta.name || user.email || '');
+  $s('st-nm',   meta.full_name || meta.name || '');
+  $s('st-em',   user.email || '');
+  const av = $('st-av');
+  if(meta.avatar_url) av.innerHTML = `<img src="${meta.avatar_url}" class="uav" alt="">`;
+  else av.innerHTML = `<div class="uavp">${(meta.full_name||'U')[0].toUpperCase()}</div>`;
+
+  // ── Step 4: Pre-render ALL UI while page is still hidden ──────────────
+  // We render into the DOM before making it visible — zero flicker
+  $('a-d').value = today();
+  setRange(30);
+  showFoodTab('a');
+
+  const hasSettings = !!(setts.height || setts.dob || setts.age || setts.goal_weight);
+
+  if(hasSettings){
+    $('sett-welcome').style.display = 'none';
+    // Pre-activate dash tab (sets .on class) without animation
+    ['dash','add','history','food','settings'].forEach(id => {
+      $('s-'+id).classList.toggle('on', id==='dash');
+      $('nb-'+id).classList.toggle('on', id==='dash');
+    });
+  } else {
+    $('sett-welcome').style.display = 'block';
+    ['dash','add','history','food','settings'].forEach(id => {
+      $('s-'+id).classList.toggle('on', id==='settings');
+      $('nb-'+id).classList.toggle('on', id==='settings');
+    });
+  }
+
+  // ── Step 5: Render all data into DOM while still hidden ───────────────
+  updateDash();
+  updateHistory();
+  updateStreak();
+  updateTodayCals();
+  applyCalorieRecommendation();
+  applySettingsForm();
+
+  // ── Step 6: Now reveal the app — fully rendered, no updates needed ────
+  showPage('pg-app');
+
+  // ── Step 7: Charts need canvas to be visible to render correctly ───────
+  // requestAnimationFrame ensures canvas dimensions are known
+  requestAnimationFrame(() => {
+    updateCharts();
+  });
+}
+
+(async()=>{
+  const t0 = Date.now();
+  // Splash shows for min 800ms — just enough to look intentional, not enough to feel slow
+  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, 800-(Date.now()-t0))));
+
+  // 1. Check for an existing session immediately (handles page refresh / returning users)
+  const { data:{ session } } = await sb.auth.getSession();
+
+  if(session?.user){
+    // Returning user — load data in parallel WITH the splash timer
+    // so everything is ready the moment the splash ends
+    const [_] = await Promise.all([
+      initApp(session),  // loads settings + entries, applies language
+      splashWait()       // minimum splash display time
+    ]);
+  } else {
+    // No session yet — wait for OAuth redirect callback or show login
+    await splashWait();
+    showPage('pg-login');
+  }
+
+  // 2. Listen for future auth changes:
+  //    - SIGNED_IN  : fires after OAuth redirect completes
+  //    - SIGNED_OUT : fires when user logs out
+  //    - TOKEN_REFRESHED: fires when token auto-refreshes (keep data fresh)
+  sb.auth.onAuthStateChange(async(event, session) => {
+    console.log('[auth]', event, session?.user?.email);
+    if(event === 'SIGNED_IN' && session?.user) {
+      // Only init if not already showing the app (avoid double-init on refresh)
+      if($('pg-app').classList.contains('on')) return;
+      await initApp(session);
+    }
+    if(event === 'SIGNED_OUT') {
+      user = null; entries = []; setts = {};
+      showPage('pg-login');
+    }
+    if(event === 'TOKEN_REFRESHED' && session?.user && user) {
+      // Token silently refreshed — update user object but don't re-init
+      user = session.user;
+    }
+  });
+})();
+</script>
+<script>
+// Register PWA service worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js')
+      .catch(e=>console.log('SW reg failed:',e));
+  });
+}
+</script>
+</body>
+</html>
