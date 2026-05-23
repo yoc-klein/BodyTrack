@@ -2233,44 +2233,56 @@ async function initApp(session) {
   const MIN_SPLASH = 800;
   const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, MIN_SPLASH-(Date.now()-t0))));
 
-  // Track whether initApp has already run to prevent double-init
   let appInitialized = false;
 
-  // ── onAuthStateChange handles ALL auth events ──────────────────────────
-  // Register FIRST before getSession so we never miss an event
-  sb.auth.onAuthStateChange(async(event, session) => {
-    console.log('[auth]', event, session?.user?.email);
-
-    if((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user){
-      if(appInitialized) return; // already running, skip
-      appInitialized = true;
+  // Helper — runs once to boot the app or show login
+  async function boot(session){
+    if(appInitialized) return;
+    appInitialized = true;
+    if(session?.user){
       try{
         await Promise.all([initApp(session), splashWait()]);
       }catch(err){
-        console.error('[auth] initApp error:', err);
+        console.error('[boot] initApp error:', err);
+        await splashWait();
         showPage('pg-login');
       }
+    } else {
+      await splashWait();
+      showPage('pg-login');
+    }
+  }
+
+  // ── Primary: use getSession (reliable across all SDK versions) ─────────
+  const {data:{session}} = await sb.auth.getSession();
+  boot(session); // don't await — let onAuthStateChange also fire
+
+  // ── Safety net: onAuthStateChange catches OAuth redirects ──────────────
+  sb.auth.onAuthStateChange(async(event, sess) => {
+    console.log('[auth]', event, sess?.user?.email);
+    if(event === 'SIGNED_IN' && sess?.user){
+      boot(sess); // boot() guards against double-init
       return;
     }
-
     if(event === 'SIGNED_OUT'){
       appInitialized = false;
       user = null; entries = []; setts = {};
       showPage('pg-login');
       return;
     }
-
-    // INITIAL_SESSION with no user = not logged in, show login after splash
-    if(event === 'INITIAL_SESSION' && !session?.user){
-      await splashWait();
-      showPage('pg-login');
-      return;
-    }
-
-    if(event === 'TOKEN_REFRESHED' && session?.user && user){
-      user = session.user;
+    if(event === 'TOKEN_REFRESHED' && sess?.user && user){
+      user = sess.user;
     }
   });
+
+  // ── Absolute fallback: if nothing happened in 5 seconds, show login ────
+  setTimeout(()=>{
+    if(!appInitialized){
+      console.warn('[boot] timeout — showing login');
+      appInitialized = true;
+      showPage('pg-login');
+    }
+  }, 5000);
 })();
 </script>
 <script>
