@@ -2213,9 +2213,10 @@ async function initApp(session) {
   updateDash();
   updateHistory();
   updateStreak();
-  updateTodayCals();
   applyCalorieRecommendation();
   applySettingsForm();
+  // updateTodayCals is async (DB call) — run it but don't block page show
+  updateTodayCals().catch(e=>console.warn('[initApp] updateTodayCals:', e));
 
   // ── Step 6: Now reveal the app — fully rendered, no updates needed ────
   showPage('pg-app');
@@ -2236,14 +2237,20 @@ async function initApp(session) {
   const { data:{ session } } = await sb.auth.getSession();
 
   if(session?.user){
-    // Returning user — load data in parallel WITH the splash timer
-    // so everything is ready the moment the splash ends
-    const [_] = await Promise.all([
-      initApp(session),  // loads settings + entries, applies language
-      splashWait()       // minimum splash display time
-    ]);
+    // Run data loading and splash timer in parallel
+    // If initApp fails for any reason, still show login rather than hanging
+    try{
+      await Promise.all([
+        initApp(session),
+        splashWait()
+      ]);
+    }catch(err){
+      console.error('[boot] initApp failed:', err);
+      await splashWait();
+      showPage('pg-login');
+    }
   } else {
-    // No session yet — wait for OAuth redirect callback or show login
+    // No session — wait for OAuth redirect or show login
     await splashWait();
     showPage('pg-login');
   }
