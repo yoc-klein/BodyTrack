@@ -344,7 +344,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
         </div>
         <!-- Weight & BMI -->
         <div class="sg">
-          <div class="stat"><div class="sv" id="d-wt">–</div><div class="sl" id="d-wt-l">WEIGHT</div><div class="ss">kg</div></div>
+          <div class="stat"><div class="sv" id="d-wt">–</div><div class="sl" id="d-wt-l">WEIGHT</div><div class="ss" id="d-wt-unit">kg</div></div>
           <div class="stat"><div class="sv" id="d-bmi">–</div><div class="sl" id="d-bmi-l">BMI</div><div class="ss" id="d-bmi-c">–</div></div>
         </div>
         <div class="card">
@@ -362,8 +362,8 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
           </div>
           <div class="ptrk"><div class="pfil" id="g-fill" style="width:0%"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:4px">
-            <span><span id="gs-l">Start</span>: <b id="gs">–</b> kg</span>
-            <span><span id="gt-l">Target</span>: <b id="gt">–</b> kg</span>
+            <span><span id="gs-l">Start</span>: <b id="gs">–</b> <span id="g-kg-1">kg</span></span>
+            <span><span id="gt-l">Target</span>: <b id="gt">–</b> <span id="g-kg-2">kg</span></span>
           </div>
         </div>
         <div class="card">
@@ -557,7 +557,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
           <div id="fl-sum" style="display:none;background:var(--gl);border-radius:var(--r2);padding:11px;margin-bottom:11px;border:1px solid rgba(22,163,74,.2)">
             <div style="display:flex;align-items:center;justify-content:space-between">
               <span style="font-size:13px;font-weight:700;color:var(--green)" id="fl-sum-l">Total today</span>
-              <span style="font-size:20px;font-weight:900;color:var(--green)" id="fl-total">0 kcal</span>
+              <span style="font-size:20px;font-weight:900;color:var(--green)" id="fl-total">0</span> <span id="fl-kcal-lbl" style="font-size:13px;font-weight:600;color:var(--green)">kcal</span>
             </div>
             <div style="display:flex;gap:12px;margin-top:5px;font-size:12px;color:var(--gdk)">
               <span id="fl-p">P: 0g</span><span id="fl-c">C: 0g</span><span id="fl-f">F: 0g</span>
@@ -762,15 +762,15 @@ en:{
   lnTitle:'Welcome to BodyTrack',lnSub:'Track weight, BMI, calories and diet — private & secure.',
   lnBtn:'Continue with Google',lnNote:'🔒 Secure Google Sign-In. No password needed.',
   sksfx:'d',
-  nd:'Dashboard',nadd:'Add',nhist:'History',nfood:'AI Food',nsett:'Settings',
+  nd:'Dashboard',nadd:'Add Weight',nhist:'History',nfood:'AI Food',nsett:'Settings',
   demptxt:'No entries yet. Log your first weight!',dempbtn:'Log Now',
   dwtl:'WEIGHT',dbmil:'BMI',dscl:'BMI Scale',dCalTtl:"Today's Calories",
   blu:'Under',bln:'Normal',blo:'Over',blob:'Obese',
   dgl:'Goal Progress',gsl:'Start',gtl:'Target',dcl:'Weight Chart',dchl:'Change',
   cwl:'7 DAYS',cml:'30 DAYS',ctl:'TOTAL',
   cats:['Underweight','Healthy','Overweight','Obese'],
-  attl:'➕ Add Entry',asub:"Record today's weight",awl:'Weight (kg)',adl:'Date',anl:'Note (optional)',
-  anph:'How do you feel today?',bpvl:'BMI Preview',abtn:'Add Entry',
+  attl:'➕ Add Weight Measurement',asub:"Record your weight measurement",awl:'Weight (kg)',adl:'Date',anl:'Note (optional)',
+  anph:'How do you feel today?',bpvl:'BMI Preview',abtn:'Add Weight Measurement',
   aok:'Entry logged! 💪',ahint:'💡 Set your height in Settings so BMI is calculated automatically.',
   httl:'History',hexp:'Export',hbmil:'BMI Over Time',hcall:'Calories Per Day',hdel:'Entry deleted',
   ftla:'Analyzer',ftll:'Food Log',ftlm:'Menu',
@@ -799,6 +799,7 @@ en:{
   stghd:'WEIGHT GOAL',stgwl:'Target weight (kg)',stgdl:'Target date',
   stcahd:'CALORIE GOAL',stcall:'Daily calorie goal',
   stsv:'Save Settings',stsaved:'Settings saved! ✅',stahd:'ACCOUNT',stlo:'Sign Out',
+  kgUnit:'kg',kcalUnit:'kcal',kcalDay:'kcal/day',
   noht:'Set your height in Settings first.',nodata:'No data to export',exported:'Exported! 📁',
   wtbad:'Enter a valid weight (20–300 kg)',saving:'Saving...'
 },
@@ -806,15 +807,15 @@ he:{
   lnTitle:'ברוך הבא ל-BodyTrack',lnSub:'עקוב אחר משקל, BMI, קלוריות ותזונה — פרטי ומאובטח.',
   lnBtn:'המשך עם Google',lnNote:'🔒 התחברות מאובטחת דרך Google. ללא סיסמה.',
   sksfx:'י',
-  nd:'לוח ראשי',nadd:'הוסף',nhist:'היסטוריה',nfood:'AI אוכל',nsett:'הגדרות',
+  nd:'לוח ראשי',nadd:'הוסף משקל',nhist:'היסטוריה',nfood:'AI אוכל',nsett:'הגדרות',
   demptxt:'אין רשומות עדיין. תרשום את המשקל הראשון שלך!',dempbtn:'הוסף עכשיו',
   dwtl:'משקל',dbmil:'BMI',dscl:'סולם BMI',dCalTtl:'קלוריות היום',
   blu:'תת-משקל',bln:'תקין',blo:'עודף',blob:'השמנה',
   dgl:'התקדמות למטרה',gsl:'התחלה',gtl:'יעד',dcl:'גרף משקל',dchl:'שינוי',
   cwl:'7 ימים',cml:'30 ימים',ctl:'סה"כ',
   cats:['תת-משקל','תקין','עודף משקל','השמנה'],
-  attl:'➕ הוסף רשומה',asub:'תעד את המשקל שלך היום',awl:'משקל (ק"ג)',adl:'תאריך',anl:'הערה (אופציונלי)',
-  anph:'איך אתה מרגיש היום?',bpvl:'תצוגה מקדימה BMI',abtn:'הוסף רשומה',
+  attl:'➕ הוסף מדידת משקל',asub:'תעד את מדידת המשקל שלך היום',awl:'משקל (ק"ג)',adl:'תאריך',anl:'הערה (אופציונלי)',
+  anph:'איך אתה מרגיש היום?',bpvl:'תצוגה מקדימה BMI',abtn:'הוסף מדידה',
   aok:'הרשומה נשמרה! 💪',ahint:'💡 הגדר גובה בהגדרות כדי לחשב BMI אוטומטית.',
   httl:'היסטוריה',hexp:'ייצוא',hbmil:'BMI לאורך זמן',hcall:'קלוריות ליום',hdel:'הרשומה נמחקה',
   ftla:'ניתוח',ftll:'יומן אוכל',ftlm:'תפריט',
@@ -843,6 +844,7 @@ he:{
   stghd:'יעד משקל',stgwl:'משקל יעד (ק"ג)',stgdl:'תאריך יעד',
   stcahd:'יעד קלוריות',stcall:'יעד קלוריות יומי',
   stsv:'שמור הגדרות',stsaved:'ההגדרות נשמרו! ✅',stahd:'חשבון',stlo:'התנתק',
+  kgUnit:'ק"ג',kcalUnit:'קק"ל',kcalDay:'קק"ל/יום',
   noht:'הגדר גובה בהגדרות קודם.',nodata:'אין נתונים לייצוא',exported:'יוצא! 📁',
   wtbad:'הזן משקל תקין (20–300 ק"ג)',saving:'שומר...'
 }};
@@ -863,7 +865,7 @@ const mealCol = m => ({'Breakfast':'#f59e0b','ארוחת בוקר':'#f59e0b','Lu
 const bmiCat = b => { const tx=t(); if(b<18.5)return{l:tx.cats[0],c:'bb'}; if(b<25)return{l:tx.cats[1],c:'bg'}; if(b<30)return{l:tx.cats[2],c:'ba'}; return{l:tx.cats[3],c:'br'}; };
 const calcBMI = (w,h) => +((w/((h/100)**2)).toFixed(1));
 const bmiPos = b => { if(b<=10)return 0; if(b>=40)return 100; for(const[lo,hi,a,z]of[[10,18.5,0,25],[18.5,25,25,50],[25,30,50,75],[30,40,75,100]])if(b>=lo&&b<hi)return a+(b-lo)/(hi-lo)*(z-a); return 100; };
-const fmtC = v => isNaN(v)?'–':(v>0?'+':'')+v.toFixed(1)+' kg';
+const fmtC = v => isNaN(v)?'–':(v>0?'+':'')+v.toFixed(1)+' '+t().kgUnit;
 const cCol = v => isNaN(v)?'var(--text)':v<0?'var(--green)':v>0?'var(--red)':'var(--text2)';
 
 // ═══════════════════════════════════════════
@@ -930,6 +932,16 @@ function applyTX() {
   $s('st-cahd',tx.stcahd); $s('st-cal-l',tx.stcall);
   $s('st-sv',tx.stsv); $s('st-ahd',tx.stahd); $s('st-lo',tx.stlo);
   const ci=$('chat-inp'); if(ci)ci.placeholder=tx.mChatPh;
+  // Update kg/kcal units throughout the UI
+  const setTxt=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setTxt('d-wt-unit',   tx.kgUnit);
+  setTxt('g-kg-1',      tx.kgUnit);
+  setTxt('g-kg-2',      tx.kgUnit);
+  setTxt('crl',         tx.kcalUnit);
+  setTxt('cal-rec-kcal',tx.kcalDay);
+  setTxt('fl-kcal-lbl', tx.kcalUnit);
+  // Update chart weight axis label — rebuild charts on lang change
+  if(entries.length) setTimeout(updateCharts, 50);
   if(entries.length){ const last=entries[entries.length-1]; const cat=bmiCat(last.bmi); const b=$('d-bdg'); if(b){b.className='badge '+cat.c; b.textContent=cat.l;} $s('d-bmi-c',cat.l); }
 }
 
@@ -1292,7 +1304,7 @@ function updateHistory() {
     return`<div class="ent">
       <div class="edt">${dt}</div>
       <div class="ebd">
-        <div class="ewt">${parseFloat(e.weight).toFixed(1)} kg</div>
+        <div class="ewt">${parseFloat(e.weight).toFixed(1)} ${t().kgUnit}</div>
         <span class="badge ${cat.c}" style="margin-top:3px;display:inline-flex">BMI ${parseFloat(e.bmi).toFixed(1)} · ${cat.l}</span>
         ${e.note?`<div style="font-size:12px;color:var(--text3);margin-top:2px">${e.note}</div>`:''}
       </div>
@@ -1327,7 +1339,7 @@ async function updateCharts(){
     scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10},maxTicksLimit:7}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10}}}}};
   if(wCI)wCI.destroy();
   const wc=$('wChart');
-  if(wc)wCI=new Chart(wc,{type:'line',data:{labels,datasets:[{data:fe.map(e=>parseFloat(e.weight)),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',borderWidth:2.5,fill:true,tension:0.4,pointBackgroundColor:'#16a34a',pointRadius:fe.length>20?2:4,pointHoverRadius:6}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' kg'}}}}});
+  if(wc)wCI=new Chart(wc,{type:'line',data:{labels,datasets:[{data:fe.map(e=>parseFloat(e.weight)),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',borderWidth:2.5,fill:true,tension:0.4,pointBackgroundColor:'#16a34a',pointRadius:fe.length>20?2:4,pointHoverRadius:6}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' '+t().kgUnit}}}}});
   if(bCI)bCI.destroy();
   const bc=$('bChart');
   if(bc)bCI=new Chart(bc,{type:'line',data:{labels,datasets:[{data:fe.map(e=>parseFloat(e.bmi)),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,fill:true,tension:0.4,pointBackgroundColor:'#2563eb',pointRadius:fe.length>20?2:4,pointHoverRadius:6}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,min:10,max:45}}}});
@@ -2031,9 +2043,9 @@ function renderMenuDisplay(menu){
     <div class="mday">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
         <span style="font-size:13px;font-weight:800">${d.day}</span>
-        <span style="font-size:11px;color:var(--text3)">${d.total||'–'} kcal</span>
+        <span style="font-size:11px;color:var(--text3)">${d.total||'–'} ${t().kcalUnit}</span>
       </div>
-      ${(d.meals||[]).map(m=>`<div class="mline"><span class="mtype">${m.type}</span><span class="mname">${m.name}</span><span class="mcal">${m.cal}</span></div>`).join('')}
+      ${(d.meals||[]).map(m=>`<div class="mline"><span class="mtype">${m.type}</span><span class="mname">${m.name}</span><span class="mcal">${m.cal} ${t().kcalUnit}</span></div>`).join('')}
     </div>`).join('');
   $('m-disp').style.display='block';
 }
@@ -2110,7 +2122,7 @@ async function openMenu(id){
     <div class="mday">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
         <span style="font-size:13px;font-weight:800">${d.day}</span>
-        <span style="font-size:11px;color:var(--text3)">${d.total||'–'} kcal</span>
+        <span style="font-size:11px;color:var(--text3)">${d.total||'–'} ${t().kcalUnit}</span>
       </div>
       ${(d.meals||[]).map(ml=>`<div class="mline"><span class="mtype">${ml.type}</span><span class="mname">${ml.name}</span><span class="mcal">${ml.cal}</span></div>`).join('')}
     </div>`).join('');
