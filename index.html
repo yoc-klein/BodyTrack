@@ -642,6 +642,12 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 
     <!-- SETTINGS -->
     <div id="s-settings" class="scr">
+      <!-- Welcome banner shown only when no settings saved yet -->
+      <div id="sett-welcome" style="display:none;margin-bottom:12px;padding:16px;border-radius:var(--r);background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;box-shadow:var(--sh2)">
+        <div style="font-size:20px;margin-bottom:6px">👋</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:4px" id="sw-title">Welcome to BodyTrack!</div>
+        <div style="font-size:13px;opacity:.9;line-height:1.6" id="sw-body">To start tracking, please fill in your details below. Your height is required to calculate BMI, and your goal will help us recommend the right daily calories for you.</div>
+      </div>
       <div class="card">
         <div class="ct" id="st-ttl">⚙️ Settings</div>
         <div style="display:flex;align-items:center;gap:12px;margin:12px 0 4px">
@@ -794,7 +800,8 @@ en:{
   mnml:'Menu name',msvl:'Save',msaved:'Menu saved! 💾',smTtl:'💾 Saved Menus',smEmpty:'No saved menus yet.',
   mgl2:'Weight Loss',mgm:'Maintenance',mgmu:'Muscle Gain',
   mpno:'No restrictions',mpvg:'Vegetarian',mpvn:'Vegan',mpgf:'Gluten-free',mpmd:'Mediterranean',
-  stttl:'⚙️ Settings',stlhd:'LANGUAGE',stbhd:'BODY MEASUREMENTS',
+  stttl:'⚙️ Settings',stlhd:'LANGUAGE',
+  swTitle:'Welcome to BodyTrack!',swBody:'To start tracking, please fill in your details below. Your height is required to calculate BMI, and your goal will help us recommend the right daily calories for you.',stbhd:'BODY MEASUREMENTS',
   sthl:'Height (cm)',stal:'Date of Birth',stgl:'Gender',sgsl:'Select',sgm:'Male',sgf:'Female',stActL:'Weekly Training Level',saNo:'Sedentary (no exercise)',saLight:'Light (1–2 days/week)',saMod:'Moderate (3–5 days/week)',saHeavy:'Active (6–7 days/week)',saEx:'Very active (2x/day)',
   stghd:'WEIGHT GOAL',stgwl:'Target weight (kg)',stgdl:'Target date',
   stcahd:'CALORIE GOAL',stcall:'Daily calorie goal',
@@ -839,7 +846,8 @@ he:{
   mnml:'שם התפריט',msvl:'שמור',msaved:'התפריט נשמר! 💾',smTtl:'💾 תפריטים שמורים',smEmpty:'אין תפריטים שמורים עדיין.',
   mgl2:'ירידה במשקל',mgm:'שמירה על משקל',mgmu:'עלייה בשריר',
   mpno:'ללא הגבלה',mpvg:'צמחוני',mpvn:'טבעוני',mpgf:'ללא גלוטן',mpmd:'ים תיכוני',
-  stttl:'⚙️ הגדרות',stlhd:'שפה',stbhd:'מידות גוף',
+  stttl:'⚙️ הגדרות',stlhd:'שפה',
+  swTitle:'ברוך הבא ל-BodyTrack!',swBody:'כדי להתחיל לעקוב, אנא מלא את הפרטים שלך למטה. הגובה שלך נדרש לחישוב BMI, והיעד שלך יעזור לנו להמליץ על כמות הקלוריות היומית המתאימה לך.',stbhd:'מידות גוף',
   sthl:'גובה (ס"מ)',stal:'תאריך לידה',stgl:'מגדר',sgsl:'בחר',sgm:'זכר',sgf:'נקבה',stActL:'רמת פעילות שבועית',saNo:'יושבני (ללא אימון)',saLight:'קל (1–2 ימים/שבוע)',saMod:'מתון (3–5 ימים/שבוע)',saHeavy:'פעיל (6–7 ימים/שבוע)',saEx:'פעיל מאוד (2x/יום)',
   stghd:'יעד משקל',stgwl:'משקל יעד (ק"ג)',stgdl:'תאריך יעד',
   stcahd:'יעד קלוריות',stcall:'יעד קלוריות יומי',
@@ -925,7 +933,8 @@ function applyTX() {
   $s('m-nm-l',tx.mnml); $s('m-sv-l',tx.msvl); $s('sm-ttl',tx.smTtl);
   $s('mg-l',tx.mgl2); $s('mg-m',tx.mgm); $s('mg-mu',tx.mgmu);
   $s('mp-no',tx.mpno); $s('mp-vg',tx.mpvg); $s('mp-vn',tx.mpvn); $s('mp-gf',tx.mpgf); $s('mp-md',tx.mpmd);
-  $s('st-ttl',tx.stttl); $s('st-lhd',tx.stlhd); $s('st-bhd',tx.stbhd);
+  $s('st-ttl',tx.stttl); $s('st-lhd',tx.stlhd);
+  $s('sw-title',tx.swTitle); $s('sw-body',tx.swBody); $s('st-bhd',tx.stbhd);
   $s('st-hl',tx.sthl); $s('st-al',tx.stal); $s('st-gl',tx.stgl);
   $s('sg-sl',tx.sgsl); $s('sg-m',tx.sgm); $s('sg-f',tx.sgf);
   $s('st-act-l',tx.stActL);
@@ -1040,6 +1049,8 @@ async function saveSettings() {
   }
 
   setts={...setts,...payload};
+  // Hide welcome banner once user saves settings
+  const wb=$('sett-welcome'); if(wb) wb.style.display='none';
   toast(t().stsaved);
   // Reset menu cal input so recommendation re-applies with new goal
   const mci=$('m-c'); if(mci) mci.value='';
@@ -2159,7 +2170,16 @@ function showPage(id){
 // Central function — called whenever we have a confirmed session
 async function initApp(session) {
   user = session.user;
-  showPage('pg-app');
+
+  // ── Load ALL data while splash is still showing ──────────────────────
+  // This prevents any visible "updating" flicker after the app appears
+  await Promise.all([loadSettings(), loadEntries()]);
+
+  // ── Apply language BEFORE showing the app ────────────────────────────
+  // setts.lang is now populated, so language is correct from first frame
+  if(setts.lang) setLang(setts.lang);
+
+  // ── Set user info ─────────────────────────────────────────────────────
   const meta = user.user_metadata || {};
   $s('tp-user', meta.full_name || meta.name || user.email || '');
   $s('st-nm',   meta.full_name || meta.name || '');
@@ -2167,23 +2187,47 @@ async function initApp(session) {
   const av = $('st-av');
   if(meta.avatar_url) av.innerHTML = `<img src="${meta.avatar_url}" class="uav" alt="">`;
   else av.innerHTML = `<div class="uavp">${(meta.full_name||'U')[0].toUpperCase()}</div>`;
-  await loadSettings();
-  await loadEntries();
+
+  // ── Prepare all state before revealing the app ────────────────────────
   $('a-d').value = today();
-  setRange(30); updateAll(); switchTab('dash'); showFoodTab('a');
+  setRange(30);
+  showFoodTab('a');
+
+  // ── Decide starting screen ────────────────────────────────────────────
+  const hasSettings = !!(setts.height || setts.dob || setts.age || setts.goal_weight);
+
+  // ── Show the app — everything is ready, no flicker ───────────────────
+  showPage('pg-app');
+
+  if(hasSettings){
+    // Returning user with settings → go straight to dashboard
+    $('sett-welcome').style.display = 'none';
+    switchTab('dash');
+    updateAll();
+  } else {
+    // New user or no settings → go to settings with welcome message
+    $('sett-welcome').style.display = 'block';
+    switchTab('settings');
+    // Still update charts/data in background
+    updateAll();
+  }
 }
 
 (async()=>{
   const t0 = Date.now();
-  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, 1500-(Date.now()-t0))));
+  // Splash shows for min 800ms — just enough to look intentional, not enough to feel slow
+  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, 800-(Date.now()-t0))));
 
   // 1. Check for an existing session immediately (handles page refresh / returning users)
   const { data:{ session } } = await sb.auth.getSession();
 
   if(session?.user){
-    // Returning user — already logged in
-    await splashWait();
-    await initApp(session);
+    // Returning user — load data in parallel WITH the splash timer
+    // so everything is ready the moment the splash ends
+    const [_] = await Promise.all([
+      initApp(session),  // loads settings + entries, applies language
+      splashWait()       // minimum splash display time
+    ]);
   } else {
     // No session yet — wait for OAuth redirect callback or show login
     await splashWait();
