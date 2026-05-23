@@ -2171,15 +2171,13 @@ function showPage(id){
 async function initApp(session) {
   user = session.user;
 
-  // ── Load ALL data while splash is still showing ──────────────────────
-  // This prevents any visible "updating" flicker after the app appears
+  // ── Step 1: Load all data while splash is still visible ──────────────
   await Promise.all([loadSettings(), loadEntries()]);
 
-  // ── Apply language BEFORE showing the app ────────────────────────────
-  // setts.lang is now populated, so language is correct from first frame
+  // ── Step 2: Apply language immediately (correct from first frame) ─────
   if(setts.lang) setLang(setts.lang);
 
-  // ── Set user info ─────────────────────────────────────────────────────
+  // ── Step 3: Set user info ─────────────────────────────────────────────
   const meta = user.user_metadata || {};
   $s('tp-user', meta.full_name || meta.name || user.email || '');
   $s('st-nm',   meta.full_name || meta.name || '');
@@ -2188,29 +2186,45 @@ async function initApp(session) {
   if(meta.avatar_url) av.innerHTML = `<img src="${meta.avatar_url}" class="uav" alt="">`;
   else av.innerHTML = `<div class="uavp">${(meta.full_name||'U')[0].toUpperCase()}</div>`;
 
-  // ── Prepare all state before revealing the app ────────────────────────
+  // ── Step 4: Pre-render ALL UI while page is still hidden ──────────────
+  // We render into the DOM before making it visible — zero flicker
   $('a-d').value = today();
   setRange(30);
   showFoodTab('a');
 
-  // ── Decide starting screen ────────────────────────────────────────────
   const hasSettings = !!(setts.height || setts.dob || setts.age || setts.goal_weight);
 
-  // ── Show the app — everything is ready, no flicker ───────────────────
+  if(hasSettings){
+    $('sett-welcome').style.display = 'none';
+    // Pre-activate dash tab (sets .on class) without animation
+    ['dash','add','history','food','settings'].forEach(id => {
+      $('s-'+id).classList.toggle('on', id==='dash');
+      $('nb-'+id).classList.toggle('on', id==='dash');
+    });
+  } else {
+    $('sett-welcome').style.display = 'block';
+    ['dash','add','history','food','settings'].forEach(id => {
+      $('s-'+id).classList.toggle('on', id==='settings');
+      $('nb-'+id).classList.toggle('on', id==='settings');
+    });
+  }
+
+  // ── Step 5: Render all data into DOM while still hidden ───────────────
+  updateDash();
+  updateHistory();
+  updateStreak();
+  updateTodayCals();
+  applyCalorieRecommendation();
+  applySettingsForm();
+
+  // ── Step 6: Now reveal the app — fully rendered, no updates needed ────
   showPage('pg-app');
 
-  if(hasSettings){
-    // Returning user with settings → go straight to dashboard
-    $('sett-welcome').style.display = 'none';
-    switchTab('dash');
-    updateAll();
-  } else {
-    // New user or no settings → go to settings with welcome message
-    $('sett-welcome').style.display = 'block';
-    switchTab('settings');
-    // Still update charts/data in background
-    updateAll();
-  }
+  // ── Step 7: Charts need canvas to be visible to render correctly ───────
+  // requestAnimationFrame ensures canvas dimensions are known
+  requestAnimationFrame(() => {
+    updateCharts();
+  });
 }
 
 (async()=>{
