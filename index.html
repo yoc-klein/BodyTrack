@@ -799,7 +799,7 @@ en:{
   stghd:'WEIGHT GOAL',stgwl:'Target weight (kg)',stgdl:'Target date',
   stcahd:'CALORIE GOAL',stcall:'Daily calorie goal',
   stsv:'Save Settings',stsaved:'Settings saved! ✅',stahd:'ACCOUNT',stlo:'Sign Out',
-  kgUnit:'kg',kcalUnit:'kcal',kcalDay:'kcal/day',pShort:'P',cShort:'C',fShort:'F',
+  kgUnit:'kg',kcalUnit:'kcal',kcalDay:'kcal/day',gUnit:'g',pShort:'P',cShort:'C',fShort:'F',
   noht:'Set your height in Settings first.',nodata:'No data to export',exported:'Exported! 📁',
   wtbad:'Enter a valid weight (20–300 kg)',saving:'Saving...'
 },
@@ -844,7 +844,7 @@ he:{
   stghd:'יעד משקל',stgwl:'משקל יעד (ק"ג)',stgdl:'תאריך יעד',
   stcahd:'יעד קלוריות',stcall:'יעד קלוריות יומי',
   stsv:'שמור הגדרות',stsaved:'ההגדרות נשמרו! ✅',stahd:'חשבון',stlo:'התנתק',
-  kgUnit:'ק"ג',kcalUnit:'קק"ל',kcalDay:'קק"ל/יום',pShort:'ח׳',cShort:'פח׳',fShort:'ש׳',
+  kgUnit:'ק"ג',kcalUnit:'קק"ל',kcalDay:'קק"ל/יום',gUnit:'ג׳',pShort:'ח׳',cShort:'פח׳',fShort:'ש׳',
   noht:'הגדר גובה בהגדרות קודם.',nodata:'אין נתונים לייצוא',exported:'יוצא! 📁',
   wtbad:'הזן משקל תקין (20–300 ק"ג)',saving:'שומר...'
 }};
@@ -1288,7 +1288,7 @@ async function updateTodayCals() {
   const pct=Math.min(1,sumCal/goal);
   $('crf').style.strokeDashoffset=(301.6-(301.6*pct)).toFixed(1);
   $('crf').style.stroke=pct>1?'var(--red)':'var(--green)';
-  $s('mv-p',sumP.toFixed(0)+'g'); $s('mv-c',sumC.toFixed(0)+'g'); $s('mv-f',sumF.toFixed(0)+'g');
+  const gu=t().gUnit; $s('mv-p',sumP.toFixed(0)+gu); $s('mv-c',sumC.toFixed(0)+gu); $s('mv-f',sumF.toFixed(0)+gu);
   // Also refresh macro labels in case language changed
   $s('ml-p',t().macP); $s('ml-c',t().macC); $s('ml-f',t().macF);
   const mx=Math.max(sumP,sumC,sumF,1);
@@ -1666,13 +1666,14 @@ function updatePortionDisplay(pct){
   const sv = id => { const e=$(id); if(e) e.textContent=sv._v; };
   const set = (id,v) => { const e=$(id); if(e) e.textContent=v; };
   set('cfb-cal', cal);
-  set('cfb-p',   prot+'g');
-  set('cfb-c',   carbs+'g');
-  set('cfb-f',   fat+'g');
-  set('cfb-fi',  fiber+'g');
+  const gu2=t().gUnit;
+  set('cfb-p',   prot+gu2);
+  set('cfb-c',   carbs+gu2);
+  set('cfb-f',   fat+gu2);
+  set('cfb-fi',  fiber+gu2);
   // Update serving label with percentage badge
   const servEl = $('cfb-serving');
-  if(servEl) servEl.innerHTML = (_baseFood.serving_g ? _baseFood.serving_g+'g ' : '') +
+  if(servEl) servEl.innerHTML = (_baseFood.serving_g ? _baseFood.serving_g+t().gUnit+' ' : '') +
     (pct<100 ? '<span style="color:var(--amber);font-weight:700">('+pct+'%)</span>' : '');
   // Highlight active button
   [100,75,50,33,25].forEach(p=>{
@@ -1951,15 +1952,15 @@ async function loadFoodLog(){
   sum.style.display='block';
   const tx=t();
   $s('fl-total',tc); $s('fl-kcal-lbl',tx.kcalUnit);
-  $s('fl-p',tx.macP+': '+tp.toFixed(0)+'g');
-  $s('fl-c',tx.macC+': '+tcc.toFixed(0)+'g');
-  $s('fl-f',tx.macF+': '+tf.toFixed(0)+'g');
+  $s('fl-p',tx.macP+': '+tp.toFixed(0)+tx.gUnit);
+  $s('fl-c',tx.macC+': '+tcc.toFixed(0)+tx.gUnit);
+  $s('fl-f',tx.macF+': '+tf.toFixed(0)+tx.gUnit);
   el.innerHTML=logs.map(l=>`
     <div class="fl-item">
       <span class="fl-badge" style="background:${mealCol(l.meal_type)}22;color:${mealCol(l.meal_type)}">${translateMealType(l.meal_type)}</span>
       <div class="fl-bd">
         <div class="fl-nm">${l.dish_name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:1px">${parseFloat(l.protein_g||0).toFixed(0)}g ${t().pShort} · ${parseFloat(l.carbs_g||0).toFixed(0)}g ${t().cShort} · ${parseFloat(l.fat_g||0).toFixed(0)}g ${t().fShort}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:1px">${parseFloat(l.protein_g||0).toFixed(0)}${t().gUnit} ${t().pShort} · ${parseFloat(l.carbs_g||0).toFixed(0)}${t().gUnit} ${t().cShort} · ${parseFloat(l.fat_g||0).toFixed(0)}${t().gUnit} ${t().fShort}</div>
       </div>
       <div class="fl-cal">${l.calories}</div>
       <button class="bico" style="background:none;color:var(--text3)" onclick="rmFoodLog('${l.id}')">🗑️</button>
