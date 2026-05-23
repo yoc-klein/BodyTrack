@@ -2171,13 +2171,15 @@ function showPage(id){
 async function initApp(session) {
   user = session.user;
 
-  // ── Step 1: Load all data while splash is still visible ──────────────
+  // ── Load ALL data while splash is still showing ──────────────────────
+  // This prevents any visible "updating" flicker after the app appears
   await Promise.all([loadSettings(), loadEntries()]);
 
-  // ── Step 2: Apply language immediately (correct from first frame) ─────
+  // ── Apply language BEFORE showing the app ────────────────────────────
+  // setts.lang is now populated, so language is correct from first frame
   if(setts.lang) setLang(setts.lang);
 
-  // ── Step 3: Set user info ─────────────────────────────────────────────
+  // ── Set user info ─────────────────────────────────────────────────────
   const meta = user.user_metadata || {};
   $s('tp-user', meta.full_name || meta.name || user.email || '');
   $s('st-nm',   meta.full_name || meta.name || '');
@@ -2186,103 +2188,72 @@ async function initApp(session) {
   if(meta.avatar_url) av.innerHTML = `<img src="${meta.avatar_url}" class="uav" alt="">`;
   else av.innerHTML = `<div class="uavp">${(meta.full_name||'U')[0].toUpperCase()}</div>`;
 
-  // ── Step 4: Pre-render ALL UI while page is still hidden ──────────────
-  // We render into the DOM before making it visible — zero flicker
+  // ── Prepare all state before revealing the app ────────────────────────
   $('a-d').value = today();
   setRange(30);
   showFoodTab('a');
 
+  // ── Decide starting screen ────────────────────────────────────────────
   const hasSettings = !!(setts.height || setts.dob || setts.age || setts.goal_weight);
 
-  if(hasSettings){
-    $('sett-welcome').style.display = 'none';
-    // Pre-activate dash tab (sets .on class) without animation
-    ['dash','add','history','food','settings'].forEach(id => {
-      $('s-'+id).classList.toggle('on', id==='dash');
-      $('nb-'+id).classList.toggle('on', id==='dash');
-    });
-  } else {
-    $('sett-welcome').style.display = 'block';
-    ['dash','add','history','food','settings'].forEach(id => {
-      $('s-'+id).classList.toggle('on', id==='settings');
-      $('nb-'+id).classList.toggle('on', id==='settings');
-    });
-  }
-
-  // ── Step 5: Render all data into DOM while still hidden ───────────────
-  updateDash();
-  updateHistory();
-  updateStreak();
-  applyCalorieRecommendation();
-  applySettingsForm();
-  // updateTodayCals is async (DB call) — run it but don't block page show
-  updateTodayCals().catch(e=>console.warn('[initApp] updateTodayCals:', e));
-
-  // ── Step 6: Now reveal the app — fully rendered, no updates needed ────
+  // ── Show the app — everything is ready, no flicker ───────────────────
   showPage('pg-app');
 
-  // ── Step 7: Charts need canvas to be visible to render correctly ───────
-  // requestAnimationFrame ensures canvas dimensions are known
-  requestAnimationFrame(() => {
-    updateCharts();
-  });
+  if(hasSettings){
+    // Returning user with settings → go straight to dashboard
+    $('sett-welcome').style.display = 'none';
+    switchTab('dash');
+    updateAll();
+  } else {
+    // New user or no settings → go to settings with welcome message
+    $('sett-welcome').style.display = 'block';
+    switchTab('settings');
+    // Still update charts/data in background
+    updateAll();
+  }
 }
 
 (async()=>{
   const t0 = Date.now();
-  const MIN_SPLASH = 800;
-  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, MIN_SPLASH-(Date.now()-t0))));
+  // Splash shows for min 800ms — just enough to look intentional, not enough to feel slow
+  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, 800-(Date.now()-t0))));
 
-  let appInitialized = false;
+  // 1. Check for an existing session immediately (handles page refresh / returning users)
+  const { data:{ session } } = await sb.auth.getSession();
 
-  // Helper — runs once to boot the app or show login
-  async function boot(session){
-    if(appInitialized) return;
-    appInitialized = true;
-    if(session?.user){
-      try{
-        await Promise.all([initApp(session), splashWait()]);
-      }catch(err){
-        console.error('[boot] initApp error:', err);
-        await splashWait();
-        showPage('pg-login');
-      }
-    } else {
-      await splashWait();
-      showPage('pg-login');
-    }
+  if(session?.user){
+    // Returning user — load data in parallel WITH the splash timer
+    // so everything is ready the moment the splash ends
+    const [_] = await Promise.all([
+      initApp(session),  // loads settings + entries, applies language
+      splashWait()       // minimum splash display time
+    ]);
+  } else {
+    // No session yet — wait for OAuth redirect callback or show login
+    await splashWait();
+    showPage('pg-login');
   }
 
-  // ── Primary: use getSession (reliable across all SDK versions) ─────────
-  const {data:{session}} = await sb.auth.getSession();
-  boot(session); // don't await — let onAuthStateChange also fire
-
-  // ── Safety net: onAuthStateChange catches OAuth redirects ──────────────
-  sb.auth.onAuthStateChange(async(event, sess) => {
-    console.log('[auth]', event, sess?.user?.email);
-    if(event === 'SIGNED_IN' && sess?.user){
-      boot(sess); // boot() guards against double-init
-      return;
+  // 2. Listen for future auth changes:
+  //    - SIGNED_IN  : fires after OAuth redirect completes
+  //    - SIGNED_OUT : fires when user logs out
+  //    - TOKEN_REFRESHED: fires when token auto-refreshes (keep data fresh)
+  sb.auth.onAuthStateChange(async(event, session) => {
+    console.log('[auth]', event, session?.user?.email);
+    if(event === 'SIGNED_IN' && session?.user) {
+      // Only init if not already showing the app (avoid double-init on refresh)
+      if($('pg-app').classList.contains('on')) return;
+      await initApp(session);
     }
-    if(event === 'SIGNED_OUT'){
-      appInitialized = false;
+    if(event === 'SIGNED_OUT') {
       user = null; entries = []; setts = {};
       showPage('pg-login');
-      return;
     }
-    if(event === 'TOKEN_REFRESHED' && sess?.user && user){
-      user = sess.user;
+    if(event === 'TOKEN_REFRESHED' && session?.user && user) {
+      // Token silently refreshed — update user object but don't re-init
+      user = session.user;
     }
   });
-
-  // ── Absolute fallback: if nothing happened in 5 seconds, show login ────
-  setTimeout(()=>{
-    if(!appInitialized){
-      console.warn('[boot] timeout — showing login');
-      appInitialized = true;
-      showPage('pg-login');
-    }
-  }, 5000);
 })();
 </script>
 <script>
