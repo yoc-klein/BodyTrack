@@ -560,7 +560,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
               <span style="font-size:20px;font-weight:900;color:var(--green)" id="fl-total">0</span> <span id="fl-kcal-lbl" style="font-size:13px;font-weight:600;color:var(--green)">kcal</span>
             </div>
             <div style="display:flex;gap:12px;margin-top:5px;font-size:12px;color:var(--gdk)">
-              <span id="fl-p">P: 0g</span><span id="fl-c">C: 0g</span><span id="fl-f">F: 0g</span>
+              <span id="fl-p">P: 0g</span> · <span id="fl-c">C: 0g</span> · <span id="fl-f">F: 0g</span>
             </div>
           </div>
           <div id="fl-list"></div>
@@ -799,7 +799,7 @@ en:{
   stghd:'WEIGHT GOAL',stgwl:'Target weight (kg)',stgdl:'Target date',
   stcahd:'CALORIE GOAL',stcall:'Daily calorie goal',
   stsv:'Save Settings',stsaved:'Settings saved! ✅',stahd:'ACCOUNT',stlo:'Sign Out',
-  kgUnit:'kg',kcalUnit:'kcal',kcalDay:'kcal/day',
+  kgUnit:'kg',kcalUnit:'kcal',kcalDay:'kcal/day',pShort:'P',cShort:'C',fShort:'F',
   noht:'Set your height in Settings first.',nodata:'No data to export',exported:'Exported! 📁',
   wtbad:'Enter a valid weight (20–300 kg)',saving:'Saving...'
 },
@@ -844,7 +844,7 @@ he:{
   stghd:'יעד משקל',stgwl:'משקל יעד (ק"ג)',stgdl:'תאריך יעד',
   stcahd:'יעד קלוריות',stcall:'יעד קלוריות יומי',
   stsv:'שמור הגדרות',stsaved:'ההגדרות נשמרו! ✅',stahd:'חשבון',stlo:'התנתק',
-  kgUnit:'ק"ג',kcalUnit:'קק"ל',kcalDay:'קק"ל/יום',
+  kgUnit:'ק"ג',kcalUnit:'קק"ל',kcalDay:'קק"ל/יום',pShort:'ח׳',cShort:'פח׳',fShort:'ש׳',
   noht:'הגדר גובה בהגדרות קודם.',nodata:'אין נתונים לייצוא',exported:'יוצא! 📁',
   wtbad:'הזן משקל תקין (20–300 ק"ג)',saving:'שומר...'
 }};
@@ -861,6 +861,11 @@ const t  = () => TX[lang];
 const today = () => new Date().toISOString().split('T')[0];
 const toast = m => { const e=$('toast'); e.textContent=m; e.classList.add('on'); setTimeout(()=>e.classList.remove('on'),2600); };
 const mealCol = m => ({'Breakfast':'#f59e0b','ארוחת בוקר':'#f59e0b','Lunch':'#16a34a','ארוחת צהריים':'#16a34a','Dinner':'#2563eb','ארוחת ערב':'#2563eb','Snack':'#7c3aed','חטיף':'#7c3aed'}[m]||'#6b7280');
+
+function translateMealType(m){
+  if(lang!=='he') return m;
+  return {'Breakfast':'ארוחת בוקר','Lunch':'ארוחת צהריים','Dinner':'ארוחת ערב','Snack':'חטיף'}[m]||m;
+}
 
 const bmiCat = b => { const tx=t(); if(b<18.5)return{l:tx.cats[0],c:'bb'}; if(b<25)return{l:tx.cats[1],c:'bg'}; if(b<30)return{l:tx.cats[2],c:'ba'}; return{l:tx.cats[3],c:'br'}; };
 const calcBMI = (w,h) => +((w/((h/100)**2)).toFixed(1));
@@ -1284,12 +1289,14 @@ async function updateTodayCals() {
   $('crf').style.strokeDashoffset=(301.6-(301.6*pct)).toFixed(1);
   $('crf').style.stroke=pct>1?'var(--red)':'var(--green)';
   $s('mv-p',sumP.toFixed(0)+'g'); $s('mv-c',sumC.toFixed(0)+'g'); $s('mv-f',sumF.toFixed(0)+'g');
+  // Also refresh macro labels in case language changed
+  $s('ml-p',t().macP); $s('ml-c',t().macC); $s('ml-f',t().macF);
   const mx=Math.max(sumP,sumC,sumF,1);
   $('mf-p').style.width=(sumP/mx*100).toFixed(0)+'%'; $('mf-c').style.width=(sumC/mx*100).toFixed(0)+'%'; $('mf-f').style.width=(sumF/mx*100).toFixed(0)+'%';
   const ml=$('d-meals-today');
   ml.innerHTML=logs.length?'<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">'+logs.map(l=>`
     <div class="fl-item">
-      <span class="fl-badge" style="background:${mealCol(l.meal_type)}22;color:${mealCol(l.meal_type)}">${l.meal_type}</span>
+      <span class="fl-badge" style="background:${mealCol(l.meal_type)}22;color:${mealCol(l.meal_type)}">${translateMealType(l.meal_type)}</span>
       <div class="fl-bd"><div class="fl-nm">${l.dish_name}</div></div>
       <div class="fl-cal">${l.calories}</div>
     </div>`).join('')+'</div>':'';
@@ -1942,13 +1949,17 @@ async function loadFoodLog(){
   const tcc=logs.reduce((s,l)=>s+(parseFloat(l.carbs_g)||0),0);
   const tf=logs.reduce((s,l)=>s+(parseFloat(l.fat_g)||0),0);
   sum.style.display='block';
-  $s('fl-total',tc+' kcal'); $s('fl-p','P: '+tp.toFixed(0)+'g'); $s('fl-c','C: '+tcc.toFixed(0)+'g'); $s('fl-f','F: '+tf.toFixed(0)+'g');
+  const tx=t();
+  $s('fl-total',tc); $s('fl-kcal-lbl',tx.kcalUnit);
+  $s('fl-p',tx.macP+': '+tp.toFixed(0)+'g');
+  $s('fl-c',tx.macC+': '+tcc.toFixed(0)+'g');
+  $s('fl-f',tx.macF+': '+tf.toFixed(0)+'g');
   el.innerHTML=logs.map(l=>`
     <div class="fl-item">
-      <span class="fl-badge" style="background:${mealCol(l.meal_type)}22;color:${mealCol(l.meal_type)}">${l.meal_type}</span>
+      <span class="fl-badge" style="background:${mealCol(l.meal_type)}22;color:${mealCol(l.meal_type)}">${translateMealType(l.meal_type)}</span>
       <div class="fl-bd">
         <div class="fl-nm">${l.dish_name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:1px">${parseFloat(l.protein_g||0).toFixed(0)}g P · ${parseFloat(l.carbs_g||0).toFixed(0)}g C · ${parseFloat(l.fat_g||0).toFixed(0)}g F</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:1px">${parseFloat(l.protein_g||0).toFixed(0)}g ${t().pShort} · ${parseFloat(l.carbs_g||0).toFixed(0)}g ${t().cShort} · ${parseFloat(l.fat_g||0).toFixed(0)}g ${t().fShort}</div>
       </div>
       <div class="fl-cal">${l.calories}</div>
       <button class="bico" style="background:none;color:var(--text3)" onclick="rmFoodLog('${l.id}')">🗑️</button>
