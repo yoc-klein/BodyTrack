@@ -2230,48 +2230,44 @@ async function initApp(session) {
 
 (async()=>{
   const t0 = Date.now();
-  // Splash shows for min 800ms — just enough to look intentional, not enough to feel slow
-  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, 800-(Date.now()-t0))));
+  const MIN_SPLASH = 800;
+  const splashWait = () => new Promise(r => setTimeout(r, Math.max(0, MIN_SPLASH-(Date.now()-t0))));
 
-  // 1. Check for an existing session immediately (handles page refresh / returning users)
-  const { data:{ session } } = await sb.auth.getSession();
+  // Track whether initApp has already run to prevent double-init
+  let appInitialized = false;
 
-  if(session?.user){
-    // Run data loading and splash timer in parallel
-    // If initApp fails for any reason, still show login rather than hanging
-    try{
-      await Promise.all([
-        initApp(session),
-        splashWait()
-      ]);
-    }catch(err){
-      console.error('[boot] initApp failed:', err);
-      await splashWait();
-      showPage('pg-login');
-    }
-  } else {
-    // No session — wait for OAuth redirect or show login
-    await splashWait();
-    showPage('pg-login');
-  }
-
-  // 2. Listen for future auth changes:
-  //    - SIGNED_IN  : fires after OAuth redirect completes
-  //    - SIGNED_OUT : fires when user logs out
-  //    - TOKEN_REFRESHED: fires when token auto-refreshes (keep data fresh)
+  // ── onAuthStateChange handles ALL auth events ──────────────────────────
+  // Register FIRST before getSession so we never miss an event
   sb.auth.onAuthStateChange(async(event, session) => {
     console.log('[auth]', event, session?.user?.email);
-    if(event === 'SIGNED_IN' && session?.user) {
-      // Only init if not already showing the app (avoid double-init on refresh)
-      if($('pg-app').classList.contains('on')) return;
-      await initApp(session);
+
+    if((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user){
+      if(appInitialized) return; // already running, skip
+      appInitialized = true;
+      try{
+        await Promise.all([initApp(session), splashWait()]);
+      }catch(err){
+        console.error('[auth] initApp error:', err);
+        showPage('pg-login');
+      }
+      return;
     }
-    if(event === 'SIGNED_OUT') {
+
+    if(event === 'SIGNED_OUT'){
+      appInitialized = false;
       user = null; entries = []; setts = {};
       showPage('pg-login');
+      return;
     }
-    if(event === 'TOKEN_REFRESHED' && session?.user && user) {
-      // Token silently refreshed — update user object but don't re-init
+
+    // INITIAL_SESSION with no user = not logged in, show login after splash
+    if(event === 'INITIAL_SESSION' && !session?.user){
+      await splashWait();
+      showPage('pg-login');
+      return;
+    }
+
+    if(event === 'TOKEN_REFRESHED' && session?.user && user){
       user = session.user;
     }
   });
