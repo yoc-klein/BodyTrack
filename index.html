@@ -526,8 +526,8 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
             </div>
             <div class="r2">
               <div class="fld">
-                <label class="flbl" id="f-mt-l">Meal type</label>
-                <select class="fi" id="f-mt">
+                <label class="flbl" id="f-mt-l">Meal type <span id="f-mt-hint" style="font-size:10px;font-weight:400;color:var(--amber)">← verify</span></label>
+                <select class="fi" id="f-mt" onchange="var h=document.getElementById('f-mt-hint');if(h)h.style.display='none'">
                   <option value="Breakfast" id="fmt-b">Breakfast</option>
                   <option value="Lunch" id="fmt-l">Lunch</option>
                   <option value="Dinner" id="fmt-d">Dinner</option>
@@ -1569,12 +1569,17 @@ async function analyzeText(){
   };
 
   try{
-    // Force JSON-only response. Ask for Hebrew name if app is in Hebrew.
+    // Build a smart prompt that asks for EXACT portion based on user description
     const nameInstr = lang==='he' ? 'Use Hebrew for the name and tip fields.' : 'Use English for name and tip.';
-    const prompt = 'Nutrition expert. Calculate nutritional values for: "'+txt+'". '
-      + nameInstr + ' '
-      + 'Respond with ONLY a JSON object, no other text. '
-      + 'Format: {"name":"dish name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip"}';
+    const prompt = 'You are an expert dietitian. The user ate: "'+txt+'".'
+      +' CRITICAL RULES:'
+      +' 1) If the user mentioned a specific quantity or size (e.g. "2 eggs", "large bowl", "half a pizza", "200g"), use EXACTLY that amount — not a standard serving.'
+      +' 2) If the user listed multiple foods, add ALL calories together and list all items in the name.'
+      +' 3) If no quantity is given, ask yourself: what is a realistic portion a person would eat in one meal? Use that.'
+      +' 4) serving_g should reflect the actual amount eaten, not a textbook standard.'
+      +' '+nameInstr
+      +' Respond with ONLY a JSON object, no other text, no markdown.'
+      +' Format: {"name":"exact description of what was eaten","serving_g":300,"calories":450,"protein_g":25,"carbs_g":40,"fat_g":15,"fiber_g":4,"tip":"short personalized tip"}';
 
     const raw=await callGemini([{text:prompt}],4096,1,foodSchema);
     const r=parseJSON(raw);
@@ -1647,8 +1652,18 @@ function showFoodConfirm(r, tx){
     </div>`;
   $('f-dsh').value = r.name;
   $('f-dt').value = today();
+  // Smart meal type: use time of day as a SUGGESTION only
+  // Show visual indicator so user knows to verify it
   const hr = new Date().getHours();
-  $('f-mt').value = hr<10?'Breakfast':hr<14?'Lunch':hr<18?'Dinner':'Snack';
+  const suggestedMeal = hr<11?'Breakfast':hr<15?'Lunch':hr<19?'Dinner':'Snack';
+  $('f-mt').value = suggestedMeal;
+  // Flash the meal type selector to draw attention to it
+  const mtEl = $('f-mt');
+  if(mtEl){
+    mtEl.style.borderColor='var(--amber)';
+    mtEl.style.boxShadow='0 0 0 3px rgba(180,83,9,.15)';
+    setTimeout(()=>{ mtEl.style.borderColor=''; mtEl.style.boxShadow=''; }, 2500);
+  }
   $('f-cf').style.display = 'block';
   // Show low-confidence warning if Gemini couldn't find a reference object
   const lcWarn = $('lc-warning');
@@ -1897,15 +1912,15 @@ async function analyzeFood(){
     };
     const raw=await callGemini([
       {inlineData:{mimeType:foodB64.mime,data:foodB64.data}},
-      {text:'IMPORTANT: Respond with ONLY a JSON object. No markdown, no asterisks, no bullet points, no explanation. Just raw JSON. '
-        +(lang==='he'?'Use Hebrew for name and tip values only, inside the JSON. ':'')
-        +'Analyze this food image carefully. PORTION ESTIMATION RULES: '
-        +'1) Look for reference objects in the image (coins, hands, phones, plates, cutlery, cups) to estimate real size. '
-        +'2) If a standard plate is visible, use typical plate diameter (26cm) as scale reference. '
-        +'3) If a fork/spoon is visible, use standard fork length (18cm) as scale. '
-        +'4) If no reference object is visible, estimate based on food type and typical serving sizes, then set low_confidence:true. '
-        +'5) Estimate serving_g based on visual volume and food density. '
-        +'JSON format: {"name":"food name","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip","low_confidence":false}'}
+      {text:'You are an expert dietitian AND food photographer analyst. Look at this image very carefully.'
+        +' Step 1: Identify EXACTLY what foods/ingredients you see — be specific (e.g. not just "sandwich" but "white bread sandwich with yellow cheese, tomato and lettuce").'
+        +' Step 2: Estimate the portion size by: looking at plate/bowl size, comparing food to any visible objects (phone, hand, cup, cutlery), judging depth and density visually.'
+        +' Step 3: If you see multiple food items (e.g. sandwich AND a glass of milk), include ALL of them in the name and total calories together.'
+        +' Step 4: Calculate accurate nutritional values for the EXACT portion you see, not a standard serving.'
+        +' IMPORTANT: Respond with ONLY a raw JSON object. No markdown, no text before or after. '
+        +(lang==='he'?'Use Hebrew for the name and tip fields. ':'')
+        +'Format: {"name":"exact food description","serving_g":200,"calories":350,"protein_g":25,"carbs_g":30,"fat_g":12,"fiber_g":4,"tip":"short tip","low_confidence":false}'
+        +' Set low_confidence:true only if image is blurry or food is unrecognizable.'}
     ],4096,1,foodSchema);
     const r=parseJSON(raw);
     window._lastFood=r;
