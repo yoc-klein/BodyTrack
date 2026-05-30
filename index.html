@@ -75,7 +75,7 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
 .lname{font-size:15px;font-weight:800;letter-spacing:-.3px}
 .luser{font-size:11px;color:var(--text3);margin-top:-1px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tr{display:flex;align-items:center;gap:7px}
-.streak{color:var(--text3);font-size:11px;font-weight:500;display:flex;align-items:center;gap:3px;padding:3px 6px;border-radius:6px}
+.streak{background:var(--al);color:var(--amber);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:3px}
 .ib{width:32px;height:32px;border-radius:8px;background:var(--card2);border:1px solid var(--border);cursor:pointer;color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .ib:hover{background:var(--card3)}
 #content{flex:1;padding:12px 12px 82px;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -83,6 +83,10 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:7px 0 9px;color:var(--text3);font-size:9px;font-weight:700;letter-spacing:.3px;transition:color .15s;text-transform:uppercase}
 .nb .ico{font-size:21px;line-height:1}
 .nb.on{color:var(--green)}
+/* FAB nav item */
+.nb-fab{color:var(--green)!important;margin-top:-10px}
+.fab-btn{width:46px;height:46px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:0 3px 10px rgba(22,163,74,.45);line-height:1;margin-bottom:1px;transition:transform .15s,box-shadow .15s}
+.nb-fab:active .fab-btn{transform:scale(.93);box-shadow:0 1px 5px rgba(22,163,74,.3)}
 
 /* SCREENS */
 .scr{display:none;animation:fadeup .18s ease}
@@ -118,25 +122,25 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
 
 /* CHART */
 .chw{position:relative;width:100%;height:170px}
-.rr{display:flex;gap:5px}
-.rb{padding:5px 10px;border-radius:var(--r3);background:var(--card2);border:1px solid var(--border2);font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s}
+.rr{display:flex;gap:5px;flex-wrap:wrap}
+.rb{padding:7px 12px;border-radius:var(--r3);background:var(--card2);border:1px solid var(--border2);font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);transition:all .15s;min-height:34px;min-width:34px;display:inline-flex;align-items:center;justify-content:center}
 .rb.on{background:var(--green);color:#fff;border-color:var(--green)}
 
-/* CALORIE RING */
-.cal-wrap{display:flex;align-items:center;gap:18px;padding:8px 0}
-.cal-ring{position:relative;width:108px;height:108px;flex-shrink:0}
+/* CALORIE RING — hero */
+.cal-wrap{display:flex;flex-direction:column;align-items:center;padding:6px 0 4px}
+.cal-ring{position:relative;width:150px;height:150px;flex-shrink:0}
 .cal-ring svg{transform:rotate(-90deg)}
-.crb{fill:none;stroke:var(--border2);stroke-width:10}
-.crf{fill:none;stroke:var(--green);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .6s ease;stroke-dasharray:301.6;stroke-dashoffset:301.6}
-.crt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.crn{font-size:20px;font-weight:900;line-height:1}
-.crl{font-size:10px;color:var(--text3);font-weight:600;margin-top:2px}
-.mac-list{flex:1}
-.mac-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.mac-lbl{font-size:11px;font-weight:600;min-width:52px;color:var(--text2)}
-.mac-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
-.mac-fill{height:100%;border-radius:3px;transition:width .5s}
-.mac-val{font-size:11px;color:var(--text2);min-width:33px;text-align:right}
+.crb{fill:none;stroke:var(--border2);stroke-width:11}
+.crf{fill:none;stroke:var(--green);stroke-width:11;stroke-linecap:round;transition:stroke-dashoffset .6s ease;stroke-dasharray:408.4;stroke-dashoffset:408.4}
+.crt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.crn{font-size:28px;font-weight:900;line-height:1}
+.crl{font-size:11px;color:var(--text3);font-weight:600}
+.cr-remain{font-size:11px;color:var(--text2);font-weight:600;margin-top:1px}
+/* MACRO TILES (replace bars) */
+.mac-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;width:100%}
+.mac-tile{background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:9px 6px;text-align:center}
+.mac-tile-val{font-size:16px;font-weight:900;line-height:1}
+.mac-tile-lbl{font-size:10px;color:var(--text3);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 
 /* FORMS */
 .fld{margin-bottom:12px}
@@ -221,7 +225,25 @@ html[dir=rtl] select.fi{background-position:left 12px center;padding-right:13px;
 .mname{flex:1;color:var(--text)}
 .mcal{color:var(--green);font-size:12px;font-weight:700;white-space:nowrap}
 
-/* SETTINGS */
+/* FOOD PILL TABS */
+.fpt{flex:1;padding:7px 4px;border:none;background:none;border-radius:var(--r3);font-size:13px;font-weight:700;cursor:pointer;color:var(--text3);transition:all .15s}
+.fpt.on{background:var(--card);color:var(--green);box-shadow:var(--sh)}
+/* FOOD MODE TILES */
+.fmode-tile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:var(--r2);border:1.5px solid var(--border2);background:var(--card2);cursor:pointer;transition:all .15s;color:var(--text2)}
+.fmode-tile.on{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 6px rgba(22,163,74,.3)}
+.fmode-ico{font-size:22px;line-height:1}
+.fmode-lbl{font-size:11px;font-weight:700}
+
+/* SETTINGS ACCORDION */
+.acc-sec{border:1px solid var(--border);border-radius:var(--r2);margin-bottom:8px;overflow:hidden}
+.acc-hd{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;cursor:pointer;background:var(--card2);font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;user-select:none}
+.acc-hd:hover{background:var(--card3)}
+.acc-arrow{font-size:12px;transition:transform .2s;color:var(--text3)}
+.acc-body{padding:14px;display:none;background:var(--card)}
+.acc-body.open{display:block}
+/* CONFIRM CHIPS */
+.conf-chip{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:20px;border:1.5px solid var(--border2);background:var(--card2);font-size:13px;font-weight:700;cursor:pointer;color:var(--text);transition:all .15s}
+.conf-chip:hover{border-color:var(--green);background:var(--gl)}
 .shd{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px}
 .lt{display:flex;background:var(--card2);border-radius:var(--r2);padding:3px;gap:3px;border:1px solid var(--border)}
 .lo{flex:1;padding:9px;border:none;background:none;border-radius:var(--r3);font-size:14px;font-weight:600;cursor:pointer;color:var(--text3);transition:all .15s}
@@ -236,9 +258,13 @@ html[dir=rtl] select.fi{background-position:left 12px center;padding-right:13px;
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* EMPTY */
-.emp{text-align:center;padding:30px 16px}
+.emp{text-align:center;padding:36px 20px}
 .emp .ei{font-size:42px;margin-bottom:10px;display:block;opacity:.3}
 .emp p{font-size:14px;color:var(--text3)}
+.emp-hero{text-align:center;padding:36px 20px 28px}
+.emp-hero-ico{font-size:56px;display:block;margin-bottom:14px}
+.emp-hero-title{font-size:20px;font-weight:900;margin-bottom:6px;letter-spacing:-.3px}
+.emp-hero-sub{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:20px;max-width:280px;margin-left:auto;margin-right:auto}
 
 /* BMI PREVIEW */
 .bpv{background:var(--card2);border-radius:var(--r2);padding:11px;margin-top:9px;display:none;border:1px solid var(--border)}
@@ -303,7 +329,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
       </div>
     </div>
     <div class="tr">
-      <div class="streak"><span style="font-size:13px">🔥</span><span id="sk-n">0</span><span id="sk-sfx">d</span></div>
+      <div class="streak">🔥 <span id="sk-n">0</span><span id="sk-sfx">d</span></div>
       <button class="ib" onclick="switchTab('settings')">⚙️</button>
     </div>
   </div>
@@ -312,32 +338,37 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 
     <!-- DASHBOARD -->
     <div id="s-dash" class="scr on">
-      <div class="emp" id="d-emp" style="display:none">
-        <span class="ei">🏋️</span>
-        <p id="d-emp-txt">No entries yet. Log your first weight!</p>
-        <button class="btn btn-g mt" style="width:auto;padding:11px 26px" onclick="switchTab('add')">
-          <span class="ico">➕</span><span id="d-emp-btn">Log Now</span>
+      <div class="emp-hero" id="d-emp" style="display:none">
+        <span class="emp-hero-ico">⚡</span>
+        <div class="emp-hero-title" id="d-emp-title">Your health journey starts here</div>
+        <div class="emp-hero-sub" id="d-emp-txt">Log your first weight to unlock your dashboard — charts, BMI, calorie tracking and goal progress all appear here.</div>
+        <button class="btn btn-g" style="width:auto;padding:13px 32px;font-size:15px" onclick="switchTab('add')">
+          <span class="ico">➕</span><span id="d-emp-btn">Log First Weight</span>
         </button>
       </div>
       <div id="d-data">
-        <!-- Calorie ring -->
+        <!-- Calorie ring hero -->
         <div class="card" id="d-cal-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <span style="font-weight:800;font-size:14px" id="d-cal-ttl">Today's Calories</span>
             <span style="font-size:12px;color:var(--text2)" id="d-cal-date"></span>
           </div>
           <div class="cal-wrap">
             <div class="cal-ring">
-              <svg width="108" height="108" viewBox="0 0 108 108">
-                <circle class="crb" cx="54" cy="54" r="48"/>
-                <circle class="crf" id="crf" cx="54" cy="54" r="48"/>
+              <svg width="150" height="150" viewBox="0 0 150 150">
+                <circle class="crb" cx="75" cy="75" r="65"/>
+                <circle class="crf" id="crf" cx="75" cy="75" r="65"/>
               </svg>
-              <div class="crt"><div class="crn" id="crn">0</div><div class="crl" id="crl">kcal</div></div>
+              <div class="crt">
+                <div class="crn" id="crn">0</div>
+                <div class="crl" id="crl">kcal</div>
+                <div class="cr-remain" id="cr-remain"></div>
+              </div>
             </div>
-            <div class="mac-list">
-              <div class="mac-row"><div class="mac-lbl" id="ml-p">Protein</div><div class="mac-bar"><div class="mac-fill" id="mf-p" style="background:#16a34a;width:0%"></div></div><div class="mac-val" id="mv-p">0g</div></div>
-              <div class="mac-row"><div class="mac-lbl" id="ml-c">Carbs</div><div class="mac-bar"><div class="mac-fill" id="mf-c" style="background:#2563eb;width:0%"></div></div><div class="mac-val" id="mv-c">0g</div></div>
-              <div class="mac-row"><div class="mac-lbl" id="ml-f">Fat</div><div class="mac-bar"><div class="mac-fill" id="mf-f" style="background:#b45309;width:0%"></div></div><div class="mac-val" id="mv-f">0g</div></div>
+            <div class="mac-tiles">
+              <div class="mac-tile"><div class="mac-tile-val" id="mv-p" style="color:#16a34a">0g</div><div class="mac-tile-lbl" id="ml-p">Protein</div></div>
+              <div class="mac-tile"><div class="mac-tile-val" id="mv-c" style="color:#2563eb">0g</div><div class="mac-tile-lbl" id="ml-c">Carbs</div></div>
+              <div class="mac-tile"><div class="mac-tile-val" id="mv-f" style="color:#b45309">0g</div><div class="mac-tile-lbl" id="ml-f">Fat</div></div>
             </div>
           </div>
           <div id="d-meals-today"></div>
@@ -445,10 +476,11 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 
     <!-- AI FOOD -->
     <div id="s-food" class="scr">
-      <div class="gap8" style="margin-bottom:11px">
-        <button class="btn btn-g btn-sm" id="ft-btn-a" onclick="showFoodTab('a')" style="flex:1"><span class="ico">📷</span><span id="ft-la">Analyzer</span></button>
-        <button class="btn btn-s btn-sm" id="ft-btn-l" onclick="showFoodTab('l')" style="flex:1"><span class="ico">📋</span><span id="ft-ll">Food Log</span></button>
-        <button class="btn btn-s btn-sm" id="ft-btn-m" onclick="showFoodTab('m')" style="flex:1"><span class="ico">📅</span><span id="ft-lm">Menu</span></button>
+      <!-- FOOD TAB — pill segmented control -->
+      <div class="food-pill-tabs" style="display:flex;background:var(--card2);border:1px solid var(--border);border-radius:var(--r2);padding:3px;gap:3px;margin-bottom:11px">
+        <button class="fpt on" id="ft-btn-a" onclick="showFoodTab('a')" style="flex:1"><span id="ft-la">Analyzer</span></button>
+        <button class="fpt" id="ft-btn-l" onclick="showFoodTab('l')" style="flex:1"><span id="ft-ll">Food Log</span></button>
+        <button class="fpt" id="ft-btn-m" onclick="showFoodTab('m')" style="flex:1"><span id="ft-lm">Menu</span></button>
       </div>
 
       <!-- ANALYZER PANEL -->
@@ -457,11 +489,17 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
           <div class="ct" id="f-ttl">🍽️ Food Analyzer</div>
           <div class="cs" id="f-sub">3 ways to analyze your food</div>
 
-          <!-- MODE SELECTOR -->
-          <div style="display:flex;gap:6px;margin-bottom:14px">
-            <button class="btn btn-g btn-sm" id="fm-btn-upload" onclick="setFoodMode('upload')" style="flex:1"><span class="ico">📁</span><span id="fm-upload-l">Upload</span></button>
-            <button class="btn btn-s btn-sm" id="fm-btn-camera" onclick="setFoodMode('camera')" style="flex:1"><span class="ico">📸</span><span id="fm-camera-l">Camera</span></button>
-            <button class="btn btn-s btn-sm" id="fm-btn-text" onclick="setFoodMode('text')" style="flex:1"><span class="ico">✏️</span><span id="fm-text-l">Text</span></button>
+          <!-- MODE SELECTOR — icon tiles -->
+          <div style="display:flex;gap:7px;margin-bottom:14px">
+            <button class="fmode-tile on" id="fm-btn-upload" onclick="setFoodMode('upload')" style="flex:1">
+              <span class="fmode-ico">📁</span><span class="fmode-lbl" id="fm-upload-l">Upload</span>
+            </button>
+            <button class="fmode-tile" id="fm-btn-camera" onclick="setFoodMode('camera')" style="flex:1">
+              <span class="fmode-ico">📸</span><span class="fmode-lbl" id="fm-camera-l">Camera</span>
+            </button>
+            <button class="fmode-tile" id="fm-btn-text" onclick="setFoodMode('text')" style="flex:1">
+              <span class="fmode-ico">✏️</span><span class="fmode-lbl" id="fm-text-l">Text</span>
+            </button>
           </div>
 
           <!-- MODE: UPLOAD -->
@@ -524,21 +562,23 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
               <label class="flbl" id="f-dsh-l">Dish name (edit if needed)</label>
               <input type="text" class="fi" id="f-dsh">
             </div>
-            <div class="r2">
-              <div class="fld">
-                <label class="flbl" id="f-mt-l">Meal type <span id="f-mt-hint" style="font-size:10px;font-weight:400;color:var(--amber)">← verify</span></label>
-                <select class="fi" id="f-mt" onchange="var h=document.getElementById('f-mt-hint');if(h)h.style.display='none'">
-                  <option value="Breakfast" id="fmt-b">Breakfast</option>
-                  <option value="Lunch" id="fmt-l">Lunch</option>
-                  <option value="Dinner" id="fmt-d">Dinner</option>
-                  <option value="Snack" id="fmt-s">Snack</option>
-                </select>
-              </div>
-              <div class="fld">
-                <label class="flbl" id="f-dt-l">Date</label>
-                <input type="date" class="fi" id="f-dt">
-              </div>
+            <!-- Chip pickers for meal type + date -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+              <button class="conf-chip" id="conf-chip-meal" onclick="openMealPicker()">
+                <span id="conf-meal-ico">🌅</span> <span id="conf-meal-lbl">Breakfast</span> <span style="opacity:.5;font-size:11px">▾</span>
+              </button>
+              <button class="conf-chip" id="conf-chip-date" onclick="openDatePicker()">
+                <span>📅</span> <span id="conf-date-lbl">Today</span> <span style="opacity:.5;font-size:11px">▾</span>
+              </button>
             </div>
+            <!-- Hidden real inputs still used by confirmFoodLog() -->
+            <select class="fi" id="f-mt" style="display:none" onchange="syncMealChip()">
+              <option value="Breakfast" id="fmt-b">Breakfast</option>
+              <option value="Lunch" id="fmt-l">Lunch</option>
+              <option value="Dinner" id="fmt-d">Dinner</option>
+              <option value="Snack" id="fmt-s">Snack</option>
+            </select>
+            <input type="date" class="fi" id="f-dt" style="display:none" onchange="syncDateChip()">
             <div class="gap8">
               <button class="btn btn-g" onclick="confirmFoodLog()"><span class="ico">✅</span><span id="f-cf-l">Yes, I ate this!</span></button>
               <button class="btn btn-d btn-sm" onclick="resetFood()"><span class="ico">❌</span></button>
@@ -657,74 +697,110 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
             <div style="font-size:12px;color:var(--text3)" id="st-em">–</div>
           </div>
         </div>
-        <div class="divx"></div>
-        <div class="shd" id="st-lhd">LANGUAGE</div>
-        <div class="lt">
-          <button class="lo on" id="lng-en" onclick="setLang('en')">🇺🇸 English</button>
-          <button class="lo" id="lng-he" onclick="setLang('he')">🇮🇱 עברית</button>
-        </div>
-        <div class="divx"></div>
-        <div class="shd" id="st-bhd">BODY MEASUREMENTS</div>
-        <div class="fld">
-          <label class="flbl" id="st-hl">Height (cm)</label>
-          <input type="number" class="fi" id="s-h" placeholder="e.g. 175" step="1" min="100" max="250">
-        </div>
-        <div class="r2">
-          <div class="fld">
-            <label class="flbl" id="st-al">Date of Birth</label>
-            <input type="date" class="fi" id="s-dob" onchange="updateAgeDisplay()">
-            <div id="s-age-display" style="font-size:12px;color:var(--text2);margin-top:5px;font-weight:600"></div>
+
+        <!-- ACCORDION: Language -->
+        <div class="acc-sec" style="margin-top:12px">
+          <div class="acc-hd" onclick="toggleAcc('acc-lang')">
+            <span id="st-lhd">LANGUAGE</span><span class="acc-arrow" id="acc-lang-arr">▾</span>
           </div>
-          <div class="fld">
-            <label class="flbl" id="st-gl">Gender</label>
-            <select class="fi" id="s-gen">
-              <option value="" id="sg-sl">Select</option>
-              <option value="male" id="sg-m">Male</option>
-              <option value="female" id="sg-f">Female</option>
-            </select>
-          </div>
-        </div>
-        <div class="fld">
-          <label class="flbl" id="st-act-l">Weekly Training Level</label>
-          <select class="fi" id="s-activity">
-            <option value="1.2"   id="sa-none">Sedentary (no exercise)</option>
-            <option value="1.375" id="sa-light">Light (1–2 days/week)</option>
-            <option value="1.55"  id="sa-mod" selected>Moderate (3–5 days/week)</option>
-            <option value="1.725" id="sa-heavy">Active (6–7 days/week)</option>
-            <option value="1.9"   id="sa-extreme">Very active (2x/day or hard labor)</option>
-          </select>
-        </div>
-        <div class="divx"></div>
-        <div class="shd" id="st-ghd">WEIGHT GOAL</div>
-        <div class="r2">
-          <div class="fld">
-            <label class="flbl" id="st-gwl">Target weight (kg)</label>
-            <input type="number" class="fi" id="s-gw" placeholder="e.g. 70" step="0.5" min="20" max="300">
-          </div>
-          <div class="fld">
-            <label class="flbl" id="st-gdl">Target date</label>
-            <input type="date" class="fi" id="s-gd">
-          </div>
-        </div>
-        <div class="divx"></div>
-        <div class="shd" id="st-cahd">CALORIE GOAL</div>
-        <div class="fld">
-          <label class="flbl" id="st-cal-l">Daily calorie goal</label>
-          <input type="number" class="fi" id="s-cal" placeholder="2000" step="50" min="1000" max="5000">
-          <div id="cal-rec-box" style="display:none;margin-top:8px;padding:10px 13px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.25)">
-            <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px" id="cal-rec-label">Recommended for your goal</div>
-            <div style="display:flex;align-items:baseline;gap:6px">
-              <span style="font-size:22px;font-weight:800;color:var(--amber)" id="cal-rec-val">–</span>
-              <span style="font-size:13px;color:var(--amber)" id="cal-rec-kcal">kcal/day</span>
+          <div class="acc-body" id="acc-lang">
+            <div class="lt">
+              <button class="lo on" id="lng-en" onclick="setLang('en')">🇺🇸 English</button>
+              <button class="lo" id="lng-he" onclick="setLang('he')">🇮🇱 עברית</button>
             </div>
-            <div style="font-size:12px;color:var(--amber);margin-top:3px;opacity:.85" id="cal-rec-detail"></div>
           </div>
         </div>
-        <div class="divx"></div>
-        <button class="btn btn-g" onclick="saveSettings()"><span class="ico">💾</span><span id="st-sv">Save Settings</span></button>
-        <div class="divx"></div>
-        <div class="shd" id="st-ahd">ACCOUNT</div>
-        <button class="btn btn-d" onclick="doLogout()"><span class="ico">🚪</span><span id="st-lo">Sign Out</span></button>
+
+        <!-- ACCORDION: Body Measurements (open by default) -->
+        <div class="acc-sec">
+          <div class="acc-hd" onclick="toggleAcc('acc-body')">
+            <span id="st-bhd">BODY MEASUREMENTS</span><span class="acc-arrow" id="acc-body-arr" style="transform:rotate(180deg)">▾</span>
+          </div>
+          <div class="acc-body open" id="acc-body">
+            <div class="fld">
+              <label class="flbl" id="st-hl">Height (cm)</label>
+              <input type="number" class="fi" id="s-h" placeholder="e.g. 175" step="1" min="100" max="250">
+            </div>
+            <div class="r2">
+              <div class="fld">
+                <label class="flbl" id="st-al">Date of Birth</label>
+                <input type="date" class="fi" id="s-dob" onchange="updateAgeDisplay()">
+                <div id="s-age-display" style="font-size:12px;color:var(--text2);margin-top:5px;font-weight:600"></div>
+              </div>
+              <div class="fld">
+                <label class="flbl" id="st-gl">Gender</label>
+                <select class="fi" id="s-gen">
+                  <option value="" id="sg-sl">Select</option>
+                  <option value="male" id="sg-m">Male</option>
+                  <option value="female" id="sg-f">Female</option>
+                </select>
+              </div>
+            </div>
+            <div class="fld">
+              <label class="flbl" id="st-act-l">Weekly Training Level</label>
+              <select class="fi" id="s-activity">
+                <option value="1.2"   id="sa-none">Sedentary (no exercise)</option>
+                <option value="1.375" id="sa-light">Light (1–2 days/week)</option>
+                <option value="1.55"  id="sa-mod" selected>Moderate (3–5 days/week)</option>
+                <option value="1.725" id="sa-heavy">Active (6–7 days/week)</option>
+                <option value="1.9"   id="sa-extreme">Very active (2x/day or hard labor)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCORDION: Weight Goal (open by default) -->
+        <div class="acc-sec">
+          <div class="acc-hd" onclick="toggleAcc('acc-goal')">
+            <span id="st-ghd">WEIGHT GOAL</span><span class="acc-arrow" id="acc-goal-arr" style="transform:rotate(180deg)">▾</span>
+          </div>
+          <div class="acc-body open" id="acc-goal">
+            <div class="r2">
+              <div class="fld">
+                <label class="flbl" id="st-gwl">Target weight (kg)</label>
+                <input type="number" class="fi" id="s-gw" placeholder="e.g. 70" step="0.5" min="20" max="300">
+              </div>
+              <div class="fld">
+                <label class="flbl" id="st-gdl">Target date</label>
+                <input type="date" class="fi" id="s-gd">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCORDION: Calorie Goal -->
+        <div class="acc-sec">
+          <div class="acc-hd" onclick="toggleAcc('acc-cal')">
+            <span id="st-cahd">CALORIE GOAL</span><span class="acc-arrow" id="acc-cal-arr">▾</span>
+          </div>
+          <div class="acc-body" id="acc-cal">
+            <div class="fld">
+              <label class="flbl" id="st-cal-l">Daily calorie goal</label>
+              <input type="number" class="fi" id="s-cal" placeholder="2000" step="50" min="1000" max="5000">
+              <div id="cal-rec-box" style="display:none;margin-top:8px;padding:10px 13px;border-radius:var(--r2);background:var(--al);border:1px solid rgba(180,83,9,.25)">
+                <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px" id="cal-rec-label">Recommended for your goal</div>
+                <div style="display:flex;align-items:baseline;gap:6px">
+                  <span style="font-size:22px;font-weight:800;color:var(--amber)" id="cal-rec-val">–</span>
+                  <span style="font-size:13px;color:var(--amber)" id="cal-rec-kcal">kcal/day</span>
+                </div>
+                <div style="font-size:12px;color:var(--amber);margin-top:3px;opacity:.85" id="cal-rec-detail"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-g" style="margin-top:12px" onclick="saveSettings()"><span class="ico">💾</span><span id="st-sv">Save Settings</span></button>
+
+        <!-- ACCORDION: Account (collapsed) -->
+        <div class="acc-sec" style="margin-top:10px">
+          <div class="acc-hd" onclick="toggleAcc('acc-acct')">
+            <span id="st-ahd">ACCOUNT</span><span class="acc-arrow" id="acc-acct-arr">▾</span>
+          </div>
+          <div class="acc-body" id="acc-acct">
+            <button class="btn btn-d" onclick="doLogout()"><span class="ico">🚪</span><span id="st-lo">Sign Out</span></button>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -732,8 +808,11 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
 
   <nav id="navbar">
     <button class="nb on" id="nb-dash" onclick="switchTab('dash')"><span class="ico">🏠</span><span id="n-dash">Dashboard</span></button>
-    <button class="nb" id="nb-add" onclick="switchTab('add')"><span class="ico">➕</span><span id="n-add">Add</span></button>
     <button class="nb" id="nb-history" onclick="switchTab('history')"><span class="ico">📋</span><span id="n-hist">History</span></button>
+    <button class="nb nb-fab" id="nb-add" onclick="switchTab('add')">
+      <span class="fab-btn">＋</span>
+      <span id="n-add">Add</span>
+    </button>
     <button class="nb" id="nb-food" onclick="switchTab('food')"><span class="ico">🥗</span><span id="n-food">AI Food</span></button>
     <button class="nb" id="nb-settings" onclick="switchTab('settings')"><span class="ico">⚙️</span><span id="n-sett">Settings</span></button>
   </nav>
@@ -1297,13 +1376,24 @@ async function updateTodayCals() {
   $s('crn',sumCal);
   $s('d-cal-date',new Date().toLocaleDateString(lang==='he'?'he-IL':'en-GB',{weekday:'short',day:'2-digit',month:'short'}));
   const pct=Math.min(1,sumCal/goal);
-  $('crf').style.strokeDashoffset=(301.6-(301.6*pct)).toFixed(1);
+  $('crf').style.strokeDashoffset=(408.4-(408.4*pct)).toFixed(1);
   $('crf').style.stroke=pct>1?'var(--red)':'var(--green)';
+  // Show remaining / over
+  const remain=goal-sumCal;
+  const crr=$('cr-remain');
+  if(crr){
+    const isHe=lang==='he';
+    if(remain>=0){
+      crr.textContent=(isHe?`נותר ${remain}`:`${remain} left`)+(isHe?' קק"ל':' kcal');
+      crr.style.color='var(--text2)';
+    } else {
+      crr.textContent=(isHe?`+${-remain} מעל`:`+${-remain} over`)+(isHe?' קק"ל':' kcal');
+      crr.style.color='var(--red)';
+    }
+  }
   const gu=t().gUnit; $s('mv-p',sumP.toFixed(0)+gu); $s('mv-c',sumC.toFixed(0)+gu); $s('mv-f',sumF.toFixed(0)+gu);
   // Also refresh macro labels in case language changed
   $s('ml-p',t().macP); $s('ml-c',t().macC); $s('ml-f',t().macF);
-  const mx=Math.max(sumP,sumC,sumF,1);
-  $('mf-p').style.width=(sumP/mx*100).toFixed(0)+'%'; $('mf-c').style.width=(sumC/mx*100).toFixed(0)+'%'; $('mf-f').style.width=(sumF/mx*100).toFixed(0)+'%';
   const ml=$('d-meals-today');
   ml.innerHTML=logs.length?'<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">'+logs.map(l=>`
     <div class="fl-item">
@@ -1386,7 +1476,7 @@ function updateStreak(){
 function switchTab(tab){
   ['dash','add','history','food','settings'].forEach(id=>{
     $('s-'+id).classList.toggle('on',id===tab);
-    $('nb-'+id).classList.toggle('on',id===tab);
+    const nb=$('nb-'+id); if(nb) nb.classList.toggle('on',id===tab);
   });
   if(tab==='history'||tab==='dash')setTimeout(updateCharts,50);
   if(tab==='settings')applyCalorieRecommendation();
@@ -1420,7 +1510,7 @@ function showFoodTab(tab){
   ['a','l','m'].forEach(id=>{
     $('fp-'+id).style.display=id===tab?'block':'none';
     const btn=$('ft-btn-'+id);
-    btn.className=id===tab?'btn btn-g btn-sm':'btn btn-s btn-sm';
+    btn.className=id===tab?'fpt on':'fpt';
     btn.style.flex='1';
   });
   if(tab==='l')loadFoodLog();
@@ -1440,7 +1530,7 @@ function setFoodMode(mode){
   ['upload','camera','text'].forEach(m => {
     $('fm-'+m).style.display = m===mode ? 'block' : 'none';
     const btn = $('fm-btn-'+m);
-    btn.className = m===mode ? 'btn btn-g btn-sm' : 'btn btn-s btn-sm';
+    btn.className = m===mode ? 'fmode-tile on' : 'fmode-tile';
     btn.style.flex = '1';
   });
   // Hide preview + confirm when switching mode
@@ -1653,17 +1743,11 @@ function showFoodConfirm(r, tx){
   $('f-dsh').value = r.name;
   $('f-dt').value = today();
   // Smart meal type: use time of day as a SUGGESTION only
-  // Show visual indicator so user knows to verify it
   const hr = new Date().getHours();
   const suggestedMeal = hr<11?'Breakfast':hr<15?'Lunch':hr<19?'Dinner':'Snack';
   $('f-mt').value = suggestedMeal;
-  // Flash the meal type selector to draw attention to it
-  const mtEl = $('f-mt');
-  if(mtEl){
-    mtEl.style.borderColor='var(--amber)';
-    mtEl.style.boxShadow='0 0 0 3px rgba(180,83,9,.15)';
-    setTimeout(()=>{ mtEl.style.borderColor=''; mtEl.style.boxShadow=''; }, 2500);
-  }
+  syncMealChip();
+  syncDateChip();
   $('f-cf').style.display = 'block';
   // Show low-confidence warning if Gemini couldn't find a reference object
   const lcWarn = $('lc-warning');
@@ -1748,6 +1832,39 @@ function applyCustomPortion(){
   _customPortionOpen = false;
   const wrap = $('custom-pct-wrap');
   if(wrap) wrap.style.display = 'none';
+}
+
+// ── CONFIRM CHIPS ──────────────────────────────────────────────────
+const MEAL_ICOS = {Breakfast:'🌅',Lunch:'☀️',Dinner:'🌙',Snack:'🍎'};
+function syncMealChip(){
+  const val = $('f-mt').value;
+  const lbl = $('conf-meal-lbl');
+  const ico = $('conf-meal-ico');
+  if(lbl) lbl.textContent = translateMealType(val);
+  if(ico) ico.textContent = MEAL_ICOS[val]||'🍽️';
+}
+function syncDateChip(){
+  const val = $('f-dt').value;
+  const lbl = $('conf-date-lbl');
+  if(!lbl) return;
+  if(!val || val===today()){ lbl.textContent = lang==='he'?'היום':'Today'; return; }
+  const d = new Date(val+'T12:00:00');
+  lbl.textContent = d.toLocaleDateString(lang==='he'?'he-IL':'en-GB',{day:'2-digit',month:'short'});
+}
+function openMealPicker(){
+  const meals=['Breakfast','Lunch','Dinner','Snack'];
+  openModal(lang==='he'?'סוג ארוחה':'Meal type',
+    `<div style="display:flex;flex-direction:column;gap:8px">`+
+    meals.map(m=>`<button onclick="$('f-mt').value='${m}';syncMealChip();closeModal()"
+      style="padding:12px 16px;border-radius:var(--r2);border:1.5px solid var(--border2);background:var(--card2);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--text)">
+      <span>${MEAL_ICOS[m]||'🍽️'}</span><span>${translateMealType(m)}</span></button>`).join('')+
+    `</div>`);
+}
+function openDatePicker(){
+  openModal(lang==='he'?'תאריך':'Date',
+    `<div class="fld"><input type="date" class="fi" id="dp-inp" value="${$('f-dt').value||today()}">
+    </div><button class="btn btn-g mt" onclick="$('f-dt').value=$('dp-inp').value;syncDateChip();closeModal()">
+    <span class="ico">✅</span>${lang==='he'?'אישור':'Confirm'}</button>`);
 }
 
 function resetFood(){
@@ -2169,6 +2286,21 @@ async function openMenu(id){
 
 async function rmMenu(id){ await deleteSavedMenu(id); await loadSavedMenusUI(); toast(t().hdel); }
 function closeModal(){ $('mbg').classList.add('hidden'); }
+
+function openModal(title, bodyHtml){
+  $('m-hd-txt').textContent = title;
+  $('m-hd-body').innerHTML = bodyHtml;
+  $('mbg').classList.remove('hidden');
+}
+
+// ── ACCORDION ─────────────────────────────────────────────────────
+function toggleAcc(id){
+  const body = $(id);
+  const arr  = $(id+'-arr');
+  if(!body) return;
+  const open = body.classList.toggle('open');
+  if(arr) arr.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
 
 // ═══════════════════════════════════════════
 // PAGE SWITCH
