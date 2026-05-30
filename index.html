@@ -75,7 +75,7 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
 .lname{font-size:15px;font-weight:800;letter-spacing:-.3px}
 .luser{font-size:11px;color:var(--text3);margin-top:-1px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tr{display:flex;align-items:center;gap:7px}
-.streak{background:var(--al);color:var(--amber);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:3px}
+.streak{color:var(--text3);font-size:11px;font-weight:500;display:flex;align-items:center;gap:3px;padding:3px 6px;border-radius:6px}
 .ib{width:32px;height:32px;border-radius:8px;background:var(--card2);border:1px solid var(--border);cursor:pointer;color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .ib:hover{background:var(--card3)}
 #content{flex:1;padding:12px 12px 82px;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -303,7 +303,7 @@ html[dir=rtl] .msg-user{align-self:flex-start;border-bottom-right-radius:12px;bo
       </div>
     </div>
     <div class="tr">
-      <div class="streak">🔥 <span id="sk-n">0</span><span id="sk-sfx">d</span></div>
+      <div class="streak"><span style="font-size:13px">🔥</span><span id="sk-n">0</span><span id="sk-sfx">d</span></div>
       <button class="ib" onclick="switchTab('settings')">⚙️</button>
     </div>
   </div>
